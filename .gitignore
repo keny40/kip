@@ -1,0 +1,12 @@
+*.db
+.env
+backend/kip.db
+backend/*.db-wal
+backend/*.db-shm
+backend/*.db-journal
+backend/backups/
+frontend/.dart_tool/
+frontend/build/
+__pycache__/
+*.py[cod]
+.pytest_cache/

@@ -1,0 +1,9 @@
+race_date,track_code,race_number,player_number,finish_position,finish_time,result_status,points
+2026-07-12,SEOUL,1,1001,1,02:58.12,finished,10
+2026-07-12,SEOUL,1,1002,2,02:58.48,finished,8
+2026-07-12,SEOUL,1,1003,3,02:58.77,finished,6
+2026-07-12,SEOUL,1,1004,4,02:59.01,finished,4
+2026-07-12,SEOUL,1,1005,5,02:59.22,finished,2
+2026-07-12,BUSAN,2,1006,1,03:01.10,finished,10
+2026-07-12,BUSAN,2,1007,2,03:01.45,finished,8
+2026-07-12,BUSAN,2,1008,3,03:01.88,finished,6

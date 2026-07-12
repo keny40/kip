@@ -1,0 +1,4 @@
+race_date,track_code,race_number,scheduled_start_time,status
+2026-07-12,SEOUL,1,09:00:00,scheduled
+2026-07-12,BUSAN,2,10:30:00,scheduled
+2026-07-13,SEOUL,3,14:00:00,scheduled
