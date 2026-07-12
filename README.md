@@ -39,11 +39,13 @@ flutter run -d chrome \
 - `KIP_API_BASE_URL` controls the Flutter API base URL.
 - `CORS_ORIGINS` controls allowed local web origins.
 - `JWT_SECRET_KEY`, `JWT_ALGORITHM`, and `JWT_ACCESS_TOKEN_EXPIRE_MINUTES` configure backend auth.
+- `CSV_IMPORT_MAX_BYTES` limits admin CSV uploads.
 
 ## API Access
 
 - Read APIs remain public.
 - Create, update, and delete APIs require an admin JWT.
+- Admin CSV uploads are available at `/api/v1/admin/imports/{import_type}`.
 - In Swagger UI, use `Authorize` with the bearer token returned by `/api/v1/auth/login`.
 - Example login:
 
@@ -51,6 +53,14 @@ flutter run -d chrome \
 curl -X POST http://127.0.0.1:8000/api/v1/auth/login \
   -H "Content-Type: application/json" \
   -d "{\"email\":\"admin@example.com\",\"password\":\"your-password\"}"
+```
+
+## Admin CSV Upload
+
+```bash
+curl -X POST "http://127.0.0.1:8000/api/v1/admin/imports/players?dry_run=true" \
+  -H "Authorization: Bearer TOKEN" \
+  -F "file=@samples/players.csv"
 ```
 
 ## Demo DB Reset

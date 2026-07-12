@@ -11,9 +11,15 @@ sys.path.insert(0, str(backend_root))
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import sessionmaker
 
+from app.core.config import settings
 from app.db.base import Base
 from app.core.security import create_access_token, get_password_hash, verify_password
 from app.db.session import get_db, get_engine
+from app.models.entries import Entry
+from app.models.players import Player
+from app.models.races import Race
+from app.models.results import Result
+from app.models.tracks import Track
 from app.models.users import User
 from app.main import app
 
@@ -569,6 +575,197 @@ class ApiTestCase(unittest.TestCase):
             headers=self.admin_headers,
         )
         self.assertEqual(response.status_code, 201)
+
+    def _upload_csv(
+        self,
+        import_type: str,
+        csv_text: str | bytes,
+        *,
+        filename: str = "sample.csv",
+        content_type: str = "text/csv",
+        dry_run: bool = False,
+        headers: dict[str, str] | None = None,
+    ):
+        body = csv_text.encode("utf-8") if isinstance(csv_text, str) else csv_text
+        request_headers = self.admin_headers if headers is None else headers
+        return self.client.post(
+            f"/api/v1/admin/imports/{import_type}",
+            params={"dry_run": "true" if dry_run else "false"},
+            files={"file": (filename, body, content_type)},
+            headers=request_headers,
+        )
+
+    def _model_count(self, model) -> int:
+        with self.SessionLocal() as db:
+            return db.query(model).count()
+
+    def test_admin_import_requires_auth(self) -> None:
+        response = self._upload_csv(
+            "players",
+            "player_number,name,grade,region,status\n1,Alice,A1,Seoul,active\n",
+            headers={},
+        )
+        self.assertEqual(response.status_code, 401)
+
+    def test_admin_import_forbids_non_admin(self) -> None:
+        user = self.create_user(
+            email="viewer@example.com",
+            password="viewer-password",
+            username="viewer",
+            role="user",
+            status="active",
+            is_active=True,
+        )
+        token = create_access_token(str(user.id), role=user.role)
+        response = self._upload_csv(
+            "players",
+            "player_number,name,grade,region,status\n1,Alice,A1,Seoul,active\n",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        self.assertEqual(response.status_code, 403)
+
+    def test_admin_players_dry_run_success(self) -> None:
+        before_count = self._model_count(Player)
+        response = self._upload_csv(
+            "players",
+            "player_number,name,grade,region,status\n301,Alpha,A1,Seoul,active\n302,Beta,B1,Busan,active\n",
+            dry_run=True,
+            filename="players.csv",
+        )
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertTrue(payload["dry_run"])
+        self.assertEqual(payload["import_type"], "players")
+        self.assertEqual(payload["created"], 2)
+        self.assertEqual(self._model_count(Player), before_count)
+
+    def test_admin_players_actual_import_and_rerun_skips_duplicates(self) -> None:
+        csv_text = "player_number,name,grade,region,status\n401,Gamma,A1,Seoul,active\n402,Delta,B1,Busan,active\n"
+        first = self._upload_csv("players", csv_text, filename="players.csv")
+        self.assertEqual(first.status_code, 200)
+        first_payload = first.json()
+        self.assertEqual(first_payload["created"], 2)
+        self.assertEqual(first_payload["skipped"], 0)
+        count_after_first = self._model_count(Player)
+
+        second = self._upload_csv("players", csv_text, filename="players.csv")
+        self.assertEqual(second.status_code, 200)
+        second_payload = second.json()
+        self.assertEqual(second_payload["created"], 0)
+        self.assertEqual(second_payload["skipped"], 2)
+        self.assertEqual(self._model_count(Player), count_after_first)
+
+    def test_admin_import_invalid_type_fails(self) -> None:
+        response = self._upload_csv(
+            "unknown",
+            "player_number,name,grade,region,status\n1,Alice,A1,Seoul,active\n",
+            filename="players.csv",
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_admin_import_rejects_non_csv_file(self) -> None:
+        response = self._upload_csv(
+            "players",
+            "not,csv\n1,2\n",
+            filename="players.txt",
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_admin_import_requires_file(self) -> None:
+        response = self.client.post(
+            "/api/v1/admin/imports/players",
+            params={"dry_run": "true"},
+            headers=self.admin_headers,
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_admin_import_rejects_empty_file(self) -> None:
+        response = self._upload_csv("players", b"", filename="players.csv")
+        self.assertEqual(response.status_code, 400)
+
+    def test_admin_import_rejects_invalid_content_type(self) -> None:
+        response = self._upload_csv(
+            "players",
+            "player_number,name,grade,region,status\n1,Alice,A1,Seoul,active\n",
+            filename="players.csv",
+            content_type="application/pdf",
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_admin_import_rejects_oversized_file(self) -> None:
+        original_limit = settings.csv_import_max_bytes
+        object.__setattr__(settings, "csv_import_max_bytes", 16)
+        try:
+            response = self._upload_csv(
+                "players",
+                "player_number,name,grade,region,status\n1,Alice,A1,Seoul,active\n",
+                filename="players.csv",
+            )
+            self.assertEqual(response.status_code, 413)
+        finally:
+            object.__setattr__(settings, "csv_import_max_bytes", original_limit)
+
+    def test_admin_import_rejects_missing_required_columns(self) -> None:
+        response = self._upload_csv(
+            "players",
+            "player_number,name,grade,region\n1,Alice,A1,Seoul\n",
+            filename="players.csv",
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_admin_import_accepts_utf8_bom(self) -> None:
+        csv_bytes = b"\xef\xbb\xbfplayer_number,name,grade,region,status\n501,Echo,A1,Seoul,active\n"
+        response = self._upload_csv("players", csv_bytes, filename="players.csv")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["created"], 1)
+
+    def test_admin_import_reports_partial_success_and_failure(self) -> None:
+        csv_text = (
+            "player_number,name,grade,region,status\n"
+            "601,Foxtrot,A1,Seoul,active\n"
+            "602,,B1,Busan,active\n"
+            "601,Duplicate,A1,Seoul,active\n"
+        )
+        response = self._upload_csv("players", csv_text, filename="players.csv")
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload["created"], 1)
+        self.assertEqual(payload["skipped"], 1)
+        self.assertEqual(payload["failed"], 1)
+        self.assertEqual(len(payload["errors"]), 1)
+        self.assertEqual(payload["errors"][0]["error_code"], "INVALID_VALUE")
+
+    def test_admin_import_entries_reference_error(self) -> None:
+        race = self.create_race(track_code="UPLOAD1", track_name="Upload Track", race_number=1)
+        self.create_player(player_number=701, name="Player Seven")
+        response = self._upload_csv(
+            "entries",
+            (
+                "race_date,track_code,race_number,player_number,entry_number,lane_number,lineup_position,status\n"
+                f"{race['race_date']},UPLOAD1,1,999,1,1,1,confirmed\n"
+            ),
+            filename="entries.csv",
+        )
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload["failed"], 1)
+        self.assertEqual(payload["errors"][0]["error_code"], "LOOKUP_ERROR")
+
+    def test_admin_import_results_reference_error(self) -> None:
+        race = self.create_race(track_code="UPLOAD2", track_name="Upload Track 2", race_number=1)
+        self.create_player(player_number=801, name="Player Eight")
+        response = self._upload_csv(
+            "results",
+            (
+                "race_date,track_code,race_number,player_number,finish_position,finish_time,result_status,points\n"
+                f"{race['race_date']},UPLOAD2,1,999,1,02:58.12,finished,10\n"
+            ),
+            filename="results.csv",
+        )
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload["failed"], 1)
+        self.assertEqual(payload["errors"][0]["error_code"], "LOOKUP_ERROR")
 
 
 if __name__ == "__main__":

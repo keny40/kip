@@ -66,6 +66,7 @@ flutter run -d chrome \
 - `JWT_SECRET_KEY=dev-only-local-secret-key-for-kip-demo-2026`
 - `JWT_ALGORITHM=HS256`
 - `JWT_ACCESS_TOKEN_EXPIRE_MINUTES=60`
+- `CSV_IMPORT_MAX_BYTES=5242880`
 
 ## Notes
 
@@ -73,6 +74,7 @@ flutter run -d chrome \
 - The demo database is SQLite-based and rebuilt by `scripts/reset_demo_db.py`.
 - Do not use the demo reset flow against a production PostgreSQL database.
 - Read APIs are public, but create/update/delete APIs require an admin JWT.
+- Admin CSV uploads use `POST /api/v1/admin/imports/{import_type}` with `multipart/form-data`.
 - Use `python scripts/create_admin.py --email admin@example.com` after a reset to create the first admin.
 - Example login request:
 
@@ -80,6 +82,14 @@ flutter run -d chrome \
 curl -X POST http://127.0.0.1:8000/api/v1/auth/login \
   -H "Content-Type: application/json" \
   -d "{\"email\":\"admin@example.com\",\"password\":\"your-password\"}"
+```
+
+Admin CSV upload example:
+
+```bash
+curl -X POST "http://127.0.0.1:8000/api/v1/admin/imports/players?dry_run=true" \
+  -H "Authorization: Bearer TOKEN" \
+  -F "file=@samples/players.csv"
 ```
 
 ## Docker Demo
