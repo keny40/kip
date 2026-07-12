@@ -63,3 +63,19 @@ flutter run -d chrome \
 - The project is currently a local MVP demo.
 - The demo database is SQLite-based and rebuilt by `scripts/reset_demo_db.py`.
 - Do not use the demo reset flow against a production PostgreSQL database.
+
+## Docker Demo
+
+Start the full local stack from the project root:
+
+```bash
+docker compose up --build
+```
+
+This exposes:
+
+- Flutter Web: http://localhost:5001
+- FastAPI: http://localhost:8000
+- API docs: http://localhost:8000/docs
+
+The Docker demo uses SQLite, keeps the demo database on a mounted host path, and reuses the existing sample-data reset flow when the database is missing.

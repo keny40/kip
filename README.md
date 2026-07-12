@@ -36,3 +36,17 @@ python scripts/reset_demo_db.py
 
 This rebuilds the local SQLite demo database and reloads sample data.
 Do not use it against a production PostgreSQL database.
+
+## Docker Demo
+
+Run the full local demo with one command:
+
+```bash
+docker compose up --build
+```
+
+Open:
+
+- http://localhost:5001
+- http://localhost:8000
+- http://localhost:8000/docs
