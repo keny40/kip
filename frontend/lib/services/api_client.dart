@@ -19,15 +19,30 @@ class ApiException implements Exception {
 }
 
 class ApiClient {
-  ApiClient({http.Client? client, String? baseUrl})
+  ApiClient({http.Client? client, String? baseUrl, String? bearerToken})
       : _client = client ?? http.Client(),
-        _baseUrl = baseUrl ?? AppConfig.apiBaseUrl;
+        _baseUrl = baseUrl ?? AppConfig.apiBaseUrl,
+        _bearerToken = bearerToken;
 
   final http.Client _client;
   final String _baseUrl;
+  String? _bearerToken;
+
+  set bearerToken(String? value) {
+    _bearerToken = value;
+  }
 
   Uri _uri(String path, [Map<String, String>? query]) {
     return Uri.parse('$_baseUrl$path').replace(queryParameters: query);
+  }
+
+  Map<String, String> buildHeaders({bool authenticated = false}) {
+    final headers = <String, String>{'Accept': 'application/json'};
+    final token = authenticated ? _bearerToken : null;
+    if (token != null && token.isNotEmpty) {
+      headers['Authorization'] = 'Bearer $token';
+    }
+    return headers;
   }
 
   Future<List<RaceSummary>> fetchTodayRaces() async {
@@ -38,7 +53,7 @@ class ApiClient {
         'page': '1',
         'page_size': '20',
       }),
-      headers: {'Accept': 'application/json'},
+      headers: buildHeaders(),
     );
     return _parseRaceList(response);
   }
@@ -46,7 +61,7 @@ class ApiClient {
   Future<List<Track>> fetchTracks() async {
     final response = await _client.get(
       _uri('/api/v1/tracks'),
-      headers: {'Accept': 'application/json'},
+      headers: buildHeaders(),
     );
     if (response.statusCode == 200) {
       final payload = jsonDecode(response.body) as List<dynamic>;
@@ -58,7 +73,7 @@ class ApiClient {
   Future<Track> fetchTrack(int trackId) async {
     final response = await _client.get(
       _uri('/api/v1/tracks/$trackId'),
-      headers: {'Accept': 'application/json'},
+      headers: buildHeaders(),
     );
     if (response.statusCode == 200) {
       return Track.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
@@ -69,7 +84,7 @@ class ApiClient {
   Future<TrackAnalyticsSummary> fetchTrackSummary(int trackId) async {
     final response = await _client.get(
       _uri('/api/v1/analytics/tracks/$trackId/summary'),
-      headers: {'Accept': 'application/json'},
+      headers: buildHeaders(),
     );
     if (response.statusCode == 200) {
       return TrackAnalyticsSummary.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
@@ -80,7 +95,7 @@ class ApiClient {
   Future<List<TrackPlayerStat>> fetchTrackPlayers(int trackId) async {
     final response = await _client.get(
       _uri('/api/v1/analytics/tracks/$trackId/players'),
-      headers: {'Accept': 'application/json'},
+      headers: buildHeaders(),
     );
     if (response.statusCode == 200) {
       final payload = jsonDecode(response.body) as List<dynamic>;
@@ -92,7 +107,7 @@ class ApiClient {
   Future<AnalyticsDashboardSummary> fetchAnalyticsDashboard() async {
     final response = await _client.get(
       _uri('/api/v1/analytics/races/summary'),
-      headers: {'Accept': 'application/json'},
+      headers: buildHeaders(),
     );
     if (response.statusCode == 200) {
       return AnalyticsDashboardSummary.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
@@ -103,7 +118,7 @@ class ApiClient {
   Future<RaceDetail> fetchRaceDetail(int raceId) async {
     final response = await _client.get(
       _uri('/api/v1/races/$raceId'),
-      headers: {'Accept': 'application/json'},
+      headers: buildHeaders(),
     );
     if (response.statusCode == 200) {
       return RaceDetail.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
@@ -114,7 +129,7 @@ class ApiClient {
   Future<List<PlayerSummary>> fetchPlayers() async {
     final response = await _client.get(
       _uri('/api/v1/players', {'page': '1', 'page_size': '100'}),
-      headers: {'Accept': 'application/json'},
+      headers: buildHeaders(),
     );
     if (response.statusCode == 200) {
       final payload = jsonDecode(response.body) as Map<String, dynamic>;
@@ -127,7 +142,7 @@ class ApiClient {
   Future<PlayerDetail> fetchPlayer(int playerId) async {
     final response = await _client.get(
       _uri('/api/v1/players/$playerId'),
-      headers: {'Accept': 'application/json'},
+      headers: buildHeaders(),
     );
     if (response.statusCode == 200) {
       return PlayerDetail.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
@@ -138,7 +153,7 @@ class ApiClient {
   Future<PlayerRaceHistoryResponse> fetchPlayerRaceHistory(int playerId) async {
     final response = await _client.get(
       _uri('/api/v1/players/$playerId/race-history'),
-      headers: {'Accept': 'application/json'},
+      headers: buildHeaders(),
     );
     if (response.statusCode == 200) {
       return PlayerRaceHistoryResponse.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
@@ -172,7 +187,7 @@ class ApiClient {
     }
     final response = await _client.get(
       _uri('/api/v1/players/$playerId/statistics', query.isEmpty ? null : query),
-      headers: {'Accept': 'application/json'},
+      headers: buildHeaders(),
     );
     if (response.statusCode == 200) {
       return PlayerStatisticsResponse.fromJson(jsonDecode(response.body) as Map<String, dynamic>);

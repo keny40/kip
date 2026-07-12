@@ -26,6 +26,13 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
         title: const Text('분석'),
         actions: [
           IconButton(
+            onPressed: () {
+              Navigator.of(context).pushNamed('/admin/login');
+            },
+            icon: const Icon(Icons.admin_panel_settings_outlined),
+            tooltip: '관리자 로그인',
+          ),
+          IconButton(
             onPressed: _reload,
             icon: const Icon(Icons.refresh_outlined),
             tooltip: 'Refresh',

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'routes/app_router.dart';
 import 'screens/main_shell_screen.dart';
 import 'theme/app_theme.dart';
 
@@ -16,6 +17,7 @@ class KipApp extends StatelessWidget {
       title: 'Keirin Intelligence Platform',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
+      routes: AppRouter.routes,
       home: const MainShellScreen(),
     );
   }
