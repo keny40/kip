@@ -3,6 +3,7 @@ from datetime import date
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
+from app.api.dependencies.auth import require_admin
 from app.db.session import get_db
 from app.schemas.common import PaginationMeta, PaginatedResponse
 from app.schemas.players import PlayerCreate, PlayerRead
@@ -37,7 +38,11 @@ def get_player(player_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("", response_model=PlayerRead, status_code=status.HTTP_201_CREATED)
-def create_player(payload: PlayerCreate, db: Session = Depends(get_db)):
+def create_player(
+    payload: PlayerCreate,
+    db: Session = Depends(get_db),
+    current_user=Depends(require_admin),
+):
     try:
         return service.create_player(db, payload)
     except ValueError as exc:

@@ -12,7 +12,9 @@ from fastapi.testclient import TestClient
 from sqlalchemy.orm import sessionmaker
 
 from app.db.base import Base
+from app.core.security import create_access_token, get_password_hash, verify_password
 from app.db.session import get_db, get_engine
+from app.models.users import User
 from app.main import app
 
 
@@ -48,6 +50,21 @@ class ApiTestCase(unittest.TestCase):
     def setUp(self) -> None:
         Base.metadata.drop_all(bind=self.engine)
         Base.metadata.create_all(bind=self.engine)
+        with self.SessionLocal() as db:
+            admin = User(
+                email="admin@example.com",
+                username="admin",
+                password_hash=get_password_hash("admin-password"),
+                role="admin",
+                status="active",
+                is_active=True,
+            )
+            db.add(admin)
+            db.commit()
+            db.refresh(admin)
+            self.admin_headers = {
+                "Authorization": f"Bearer {create_access_token(str(admin.id), role=admin.role)}"
+            }
 
     def create_track(
         self,
@@ -67,6 +84,7 @@ class ApiTestCase(unittest.TestCase):
                 "address": address,
                 "status": status,
             },
+            headers=self.admin_headers,
         )
         self.assertEqual(response.status_code, 201)
         return response.json()
@@ -81,6 +99,7 @@ class ApiTestCase(unittest.TestCase):
                 "region": "Seoul",
                 "status": "active",
             },
+            headers=self.admin_headers,
         )
         self.assertEqual(response.status_code, 201)
         return response.json()
@@ -106,6 +125,7 @@ class ApiTestCase(unittest.TestCase):
                 "scheduled_start_time": scheduled_start_time,
                 "status": status,
             },
+            headers=self.admin_headers,
         )
         self.assertEqual(response.status_code, 201)
         return response.json()
@@ -130,6 +150,7 @@ class ApiTestCase(unittest.TestCase):
                 "lineup_position": lineup_position,
                 "status": status,
             },
+            headers=self.admin_headers,
         )
         self.assertEqual(response.status_code, 201)
         return response.json()
@@ -154,9 +175,34 @@ class ApiTestCase(unittest.TestCase):
                 "result_status": result_status,
                 "points": points,
             },
+            headers=self.admin_headers,
         )
         self.assertEqual(response.status_code, 201)
         return response.json()
+
+    def create_user(
+        self,
+        *,
+        email: str,
+        password: str,
+        username: str,
+        role: str = "user",
+        status: str = "active",
+        is_active: bool = True,
+    ) -> User:
+        with self.SessionLocal() as db:
+            user = User(
+                email=email,
+                username=username,
+                password_hash=get_password_hash(password),
+                role=role,
+                status=status,
+                is_active=is_active,
+            )
+            db.add(user)
+            db.commit()
+            db.refresh(user)
+            return user
 
     def test_health_check(self) -> None:
         response = self.client.get("/health")
@@ -196,6 +242,7 @@ class ApiTestCase(unittest.TestCase):
                 "address": "Seoul",
                 "status": "active",
             },
+            headers=self.admin_headers,
         )
         self.assertEqual(response.status_code, 409)
 
@@ -217,6 +264,7 @@ class ApiTestCase(unittest.TestCase):
                 "scheduled_start_time": "09:00:00",
                 "status": "scheduled",
             },
+            headers=self.admin_headers,
         )
         self.assertEqual(response.status_code, 400)
 
@@ -272,6 +320,7 @@ class ApiTestCase(unittest.TestCase):
                 "result_status": "finished",
                 "points": 8,
             },
+            headers=self.admin_headers,
         )
         self.assertEqual(response.status_code, 400)
 
@@ -345,6 +394,7 @@ class ApiTestCase(unittest.TestCase):
                 "region": "Busan",
                 "status": "active",
             },
+            headers=self.admin_headers,
         )
         self.assertEqual(response.status_code, 400)
 
@@ -361,6 +411,7 @@ class ApiTestCase(unittest.TestCase):
                 "lineup_position": 1,
                 "status": "confirmed",
             },
+            headers=self.admin_headers,
         )
         self.assertEqual(response.status_code, 201)
         self.assertEqual(response.json()["entry_number"], 1)
@@ -380,6 +431,7 @@ class ApiTestCase(unittest.TestCase):
                     "lineup_position": 1,
                     "status": "confirmed",
                 },
+                headers=self.admin_headers,
             ).status_code,
             201,
         )
@@ -393,8 +445,130 @@ class ApiTestCase(unittest.TestCase):
                 "lineup_position": 2,
                 "status": "confirmed",
             },
+            headers=self.admin_headers,
         )
         self.assertEqual(response.status_code, 400)
+
+    def test_login_success(self) -> None:
+        response = self.client.post(
+            "/api/v1/auth/login",
+            json={"email": "admin@example.com", "password": "admin-password"},
+        )
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertIn("access_token", payload)
+        self.assertEqual(payload["token_type"], "bearer")
+        self.assertEqual(payload["expires_in"], 3600)
+
+    def test_admin_password_is_hashed(self) -> None:
+        with self.SessionLocal() as db:
+            admin = db.query(User).filter(User.email == "admin@example.com").one()
+            self.assertNotEqual(admin.password_hash, "admin-password")
+            self.assertTrue(verify_password("admin-password", admin.password_hash))
+
+    def test_login_wrong_password_fails(self) -> None:
+        response = self.client.post(
+            "/api/v1/auth/login",
+            json={"email": "admin@example.com", "password": "wrong-password"},
+        )
+        self.assertEqual(response.status_code, 401)
+
+    def test_login_missing_email_fails(self) -> None:
+        response = self.client.post(
+            "/api/v1/auth/login",
+            json={"email": "missing@example.com", "password": "admin-password"},
+        )
+        self.assertEqual(response.status_code, 401)
+
+    def test_login_inactive_user_fails(self) -> None:
+        self.create_user(
+            email="inactive@example.com",
+            password="inactive-password",
+            username="inactive",
+            status="inactive",
+            is_active=False,
+        )
+        response = self.client.post(
+            "/api/v1/auth/login",
+            json={"email": "inactive@example.com", "password": "inactive-password"},
+        )
+        self.assertEqual(response.status_code, 401)
+
+    def test_auth_me_success(self) -> None:
+        response = self.client.get("/api/v1/auth/me", headers=self.admin_headers)
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload["email"], "admin@example.com")
+        self.assertEqual(payload["role"], "admin")
+
+    def test_missing_token_rejected(self) -> None:
+        response = self.client.post(
+            "/api/v1/tracks",
+            json={
+                "code": "INC",
+                "name": "Incheon Velodrome",
+                "region": "Incheon",
+                "address": "Incheon",
+                "status": "active",
+            },
+        )
+        self.assertEqual(response.status_code, 401)
+
+    def test_invalid_token_rejected(self) -> None:
+        response = self.client.post(
+            "/api/v1/tracks",
+            json={
+                "code": "BAD",
+                "name": "Bad Track",
+                "region": "Seoul",
+                "address": "Seoul",
+                "status": "active",
+            },
+            headers={"Authorization": "Bearer invalid.token.value"},
+        )
+        self.assertEqual(response.status_code, 401)
+
+    def test_expired_token_rejected(self) -> None:
+        expired_token = create_access_token("1", role="admin", expires_minutes=-1)
+        response = self.client.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {expired_token}"})
+        self.assertEqual(response.status_code, 401)
+
+    def test_non_admin_cannot_create_track(self) -> None:
+        user = self.create_user(
+            email="user@example.com",
+            password="user-password",
+            username="user",
+            role="user",
+            status="active",
+            is_active=True,
+        )
+        token = create_access_token(str(user.id), role=user.role)
+        response = self.client.post(
+            "/api/v1/tracks",
+            json={
+                "code": "USER",
+                "name": "User Track",
+                "region": "Seoul",
+                "address": "Seoul",
+                "status": "active",
+            },
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        self.assertEqual(response.status_code, 403)
+
+    def test_admin_can_create_track(self) -> None:
+        response = self.client.post(
+            "/api/v1/tracks",
+            json={
+                "code": "ADMIN",
+                "name": "Admin Track",
+                "region": "Seoul",
+                "address": "Seoul",
+                "status": "active",
+            },
+            headers=self.admin_headers,
+        )
+        self.assertEqual(response.status_code, 201)
 
 
 if __name__ == "__main__":

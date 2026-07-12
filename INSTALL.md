@@ -22,13 +22,19 @@ uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 alembic upgrade head
 ```
 
-6. Create a new migration from the current SQLAlchemy models.
+6. Create an admin account for write access.
+
+```bash
+python ../scripts/create_admin.py --email admin@example.com
+```
+
+7. Create a new migration from the current SQLAlchemy models.
 
 ```bash
 alembic revision --autogenerate -m "description"
 ```
 
-7. Load sample data and reset the local demo database when needed.
+8. Load sample data and reset the local demo database when needed.
 
 ```bash
 python ../scripts/seed_sample_data.py
@@ -57,12 +63,24 @@ flutter run -d chrome \
 
 - `DATABASE_URL=sqlite:///./backend/kip.db`
 - `CORS_ORIGINS=http://localhost:5001,http://127.0.0.1:5001,http://localhost:5000,http://127.0.0.1:5000`
+- `JWT_SECRET_KEY=dev-only-local-secret-key-for-kip-demo-2026`
+- `JWT_ALGORITHM=HS256`
+- `JWT_ACCESS_TOKEN_EXPIRE_MINUTES=60`
 
 ## Notes
 
 - The project is currently a local MVP demo.
 - The demo database is SQLite-based and rebuilt by `scripts/reset_demo_db.py`.
 - Do not use the demo reset flow against a production PostgreSQL database.
+- Read APIs are public, but create/update/delete APIs require an admin JWT.
+- Use `python scripts/create_admin.py --email admin@example.com` after a reset to create the first admin.
+- Example login request:
+
+```bash
+curl -X POST http://127.0.0.1:8000/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d "{\"email\":\"admin@example.com\",\"password\":\"your-password\"}"
+```
 
 ## Docker Demo
 

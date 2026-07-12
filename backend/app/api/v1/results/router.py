@@ -3,6 +3,7 @@ from datetime import date
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy.orm import Session
 
+from app.api.dependencies.auth import require_admin
 from app.db.session import get_db
 from app.schemas.common import PaginationMeta, PaginatedResponse
 from app.schemas.results import (
@@ -80,7 +81,11 @@ def get_result(result_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("/results", response_model=ResultDetailRead, status_code=status.HTTP_201_CREATED)
-def create_result(payload: ResultCreate, db: Session = Depends(get_db)):
+def create_result(
+    payload: ResultCreate,
+    db: Session = Depends(get_db),
+    current_user=Depends(require_admin),
+):
     try:
         return service.create_result(db, payload)
     except LookupError as exc:
@@ -99,7 +104,12 @@ def get_race_results(race_id: int, db: Session = Depends(get_db)):
 
 
 @router.put("/results/{result_id}", response_model=ResultDetailRead)
-def update_result(result_id: int, payload: ResultUpdate, db: Session = Depends(get_db)):
+def update_result(
+    result_id: int,
+    payload: ResultUpdate,
+    db: Session = Depends(get_db),
+    current_user=Depends(require_admin),
+):
     try:
         return service.update_result(db, result_id, payload)
     except LookupError as exc:
@@ -109,7 +119,7 @@ def update_result(result_id: int, payload: ResultUpdate, db: Session = Depends(g
 
 
 @router.delete("/results/{result_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_result(result_id: int, db: Session = Depends(get_db)):
+def delete_result(result_id: int, db: Session = Depends(get_db), current_user=Depends(require_admin)):
     try:
         service.delete_result(db, result_id)
     except LookupError as exc:

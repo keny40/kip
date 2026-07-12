@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.api.dependencies.auth import require_admin
 from app.db.session import get_db
 from app.schemas.entries import EntryCreate, EntryRead
 from app.services.entries import EntryService
@@ -10,7 +11,11 @@ service = EntryService()
 
 
 @router.post("", response_model=EntryRead, status_code=status.HTTP_201_CREATED)
-def create_entry(payload: EntryCreate, db: Session = Depends(get_db)):
+def create_entry(
+    payload: EntryCreate,
+    db: Session = Depends(get_db),
+    current_user=Depends(require_admin),
+):
     try:
         return service.create_entry(db, payload)
     except LookupError as exc:

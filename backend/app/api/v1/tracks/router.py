@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.api.dependencies.auth import require_admin
 from app.db.session import get_db
 from app.schemas.tracks import TrackCreate, TrackRead, TrackUpdate
 from app.services.tracks import TrackService
@@ -23,7 +24,11 @@ def get_track(track_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("", response_model=TrackRead, status_code=status.HTTP_201_CREATED)
-def create_track(payload: TrackCreate, db: Session = Depends(get_db)):
+def create_track(
+    payload: TrackCreate,
+    db: Session = Depends(get_db),
+    current_user=Depends(require_admin),
+):
     try:
         return service.create_track(db, payload)
     except ValueError as exc:
@@ -31,7 +36,12 @@ def create_track(payload: TrackCreate, db: Session = Depends(get_db)):
 
 
 @router.put("/{track_id}", response_model=TrackRead)
-def update_track(track_id: int, payload: TrackUpdate, db: Session = Depends(get_db)):
+def update_track(
+    track_id: int,
+    payload: TrackUpdate,
+    db: Session = Depends(get_db),
+    current_user=Depends(require_admin),
+):
     try:
         return service.update_track(db, track_id, payload)
     except LookupError as exc:
@@ -41,7 +51,7 @@ def update_track(track_id: int, payload: TrackUpdate, db: Session = Depends(get_
 
 
 @router.delete("/{track_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_track(track_id: int, db: Session = Depends(get_db)):
+def delete_track(track_id: int, db: Session = Depends(get_db), current_user=Depends(require_admin)):
     try:
         service.delete_track(db, track_id)
     except LookupError as exc:

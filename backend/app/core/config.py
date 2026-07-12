@@ -26,7 +26,9 @@ class Settings:
     cors_origins: tuple[str, ...] = parse_cors_origins(getenv("CORS_ORIGINS"))
     redis_url: str = getenv("REDIS_URL", "redis://localhost:6379/0")
     storage_path: str = getenv("STORAGE_PATH", "./storage")
-    jwt_secret_key: str = getenv("JWT_SECRET_KEY", "change-me")
+    jwt_secret_key: str = getenv("JWT_SECRET_KEY", "dev-only-local-secret-key-for-kip-demo-2026")
+    jwt_algorithm: str = getenv("JWT_ALGORITHM", "HS256")
+    jwt_access_token_expire_minutes: int = int(getenv("JWT_ACCESS_TOKEN_EXPIRE_MINUTES", "60"))
 
 
 settings = Settings()
