@@ -1,8 +1,10 @@
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 
 import '../config/app_config.dart';
+import '../models/admin_import.dart';
 import '../models/analytics.dart';
 import '../models/player.dart';
 import '../models/player_statistics.dart';
@@ -10,9 +12,10 @@ import '../models/race.dart';
 import '../models/track.dart';
 
 class ApiException implements Exception {
-  ApiException(this.message);
+  ApiException(this.message, {this.statusCode});
 
   final String message;
+  final int? statusCode;
 
   @override
   String toString() => message;
@@ -193,6 +196,43 @@ class ApiClient {
       return PlayerStatisticsResponse.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
     }
     throw ApiException(_messageFromResponse(response));
+  }
+
+  Future<AdminImportResult> importAdminCsv({
+    required String importType,
+    required List<int> bytes,
+    required String filename,
+    required bool dryRun,
+  }) async {
+    final request = http.MultipartRequest(
+      'POST',
+      _uri(
+        '/api/v1/admin/imports/$importType',
+        dryRun ? {'dry_run': 'true'} : null,
+      ),
+    );
+    request.headers.addAll(buildHeaders(authenticated: true));
+    request.files.add(
+      http.MultipartFile.fromBytes(
+        'file',
+        bytes,
+        filename: filename,
+        contentType: MediaType('text', 'csv'),
+      ),
+    );
+
+    late final http.StreamedResponse streamedResponse;
+    try {
+      streamedResponse = await _client.send(request);
+    } on http.ClientException {
+      throw ApiException('Request failed');
+    }
+
+    final response = await http.Response.fromStream(streamedResponse);
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return AdminImportResult.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
+    }
+    throw ApiException(_messageFromResponse(response), statusCode: response.statusCode);
   }
 
   List<RaceSummary> _parseRaceList(http.Response response) {

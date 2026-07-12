@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/current_user.dart';
+import '../routes/app_router.dart';
 import '../services/auth_service.dart';
 
 class AdminHomeScreen extends StatefulWidget {
@@ -26,7 +27,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
         return;
       }
       if (widget.authService.currentUser == null) {
-        Navigator.of(context).pushReplacementNamed('/admin/login');
+        Navigator.of(context).pushReplacementNamed(AppRouter.adminLogin);
       }
     });
   }
@@ -36,7 +37,11 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
     if (!mounted) {
       return;
     }
-    Navigator.of(context).pushReplacementNamed('/admin/login');
+    Navigator.of(context).pushReplacementNamed(AppRouter.adminLogin);
+  }
+
+  void _openCsvUpload() {
+    Navigator.of(context).pushNamed(AppRouter.adminCsvUpload);
   }
 
   @override
@@ -52,6 +57,11 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
       appBar: AppBar(
         title: const Text('관리자 홈'),
         actions: [
+          IconButton(
+            onPressed: _openCsvUpload,
+            icon: const Icon(Icons.upload_file_outlined),
+            tooltip: 'CSV 업로드',
+          ),
           IconButton(
             onPressed: _logout,
             icon: const Icon(Icons.logout),
@@ -81,6 +91,12 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                     Text('상태: ${user.status}'),
                     const SizedBox(height: 24),
                     FilledButton.icon(
+                      onPressed: _openCsvUpload,
+                      icon: const Icon(Icons.upload_file),
+                      label: const Text('CSV 업로드'),
+                    ),
+                    const SizedBox(height: 12),
+                    OutlinedButton.icon(
                       onPressed: _logout,
                       icon: const Icon(Icons.logout),
                       label: const Text('로그아웃'),
