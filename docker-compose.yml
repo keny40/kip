@@ -1,15 +1,40 @@
 services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-kip}
+      POSTGRES_USER: ${POSTGRES_USER:-kip}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    volumes:
+      - kip_postgres_data:/var/lib/postgresql/data
+    ports:
+      - "${KIP_POSTGRES_PORT:-5433}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+
   backend:
     build:
       context: .
       dockerfile: docker/backend.Dockerfile
     environment:
-      DATABASE_URL: sqlite:///./kip.db
-      CORS_ORIGINS: http://localhost:5001,http://127.0.0.1:5001
-    volumes:
-      - ./backend:/app/backend
+      DATABASE_URL: ${DATABASE_URL:?Set the PostgreSQL DATABASE_URL in .env}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5001,http://127.0.0.1:5001}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:?Set JWT_SECRET_KEY in .env}
+      JWT_ALGORITHM: ${JWT_ALGORITHM:-HS256}
+      JWT_ACCESS_TOKEN_EXPIRE_MINUTES: ${JWT_ACCESS_TOKEN_EXPIRE_MINUTES:-60}
+      KIP_SEED_DEMO: ${KIP_SEED_DEMO:-0}
+      KIP_ADMIN_EMAIL: ${KIP_ADMIN_EMAIL:-admin@example.com}
+      KIP_ADMIN_USERNAME: ${KIP_ADMIN_USERNAME:-admin}
+      KIP_ADMIN_PASSWORD: ${KIP_ADMIN_PASSWORD:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
     ports:
-      - "8000:8000"
+      - "${KIP_BACKEND_PORT:-8000}:8000"
     healthcheck:
       test:
         [
@@ -26,9 +51,12 @@ services:
       context: .
       dockerfile: frontend/Dockerfile
       args:
-        KIP_API_BASE_URL: http://localhost:8000
+        KIP_API_BASE_URL: ${KIP_PUBLIC_API_URL:-http://localhost:8000}
     ports:
-      - "5001:5001"
+      - "${KIP_FRONTEND_PORT:-5001}:5001"
     depends_on:
       backend:
         condition: service_healthy
+
+volumes:
+  kip_postgres_data:

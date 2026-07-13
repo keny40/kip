@@ -101,10 +101,14 @@ curl -X POST "http://127.0.0.1:8000/api/v1/admin/imports/players?dry_run=true" \
 
 ## Docker Demo
 
-Start the full local stack from the project root:
+The Compose stack uses PostgreSQL. Copy the example environment file and replace every placeholder secret before running it:
 
 ```bash
-docker compose up --build
+cp .env.example .env
+docker compose config --quiet
+docker compose build
+docker compose up -d
+docker compose ps
 ```
 
 This exposes:
@@ -113,6 +117,18 @@ This exposes:
 - FastAPI: http://localhost:8000
 - API docs: http://localhost:8000/docs
 
-The Docker demo uses SQLite, keeps the demo database on a mounted host path, and reuses the existing sample-data reset flow when the database is missing.
+The default host ports are PostgreSQL `5433`, Backend `8000`, and Flutter Web `5001`. Change `KIP_POSTGRES_PORT`, `KIP_BACKEND_PORT`, or `KIP_FRONTEND_PORT` if they conflict with local services.
 
-The compose files exist, but Docker Desktop was not executed during the Phase 1 release verification. Treat this command as unverified until a separate Docker smoke test succeeds.
+The Backend waits for PostgreSQL health, runs `alembic upgrade head`, and optionally runs `scripts/seed_phase2_data.py` when `KIP_SEED_DEMO=1`. The seed requires `KIP_ADMIN_PASSWORD` and never prints it.
+
+Run the destructive PostgreSQL integration test only against the disposable Compose database:
+
+```bash
+export POSTGRES_TEST_DATABASE_URL='postgresql+psycopg://kip:URL_ENCODED_PASSWORD@127.0.0.1:5433/kip'
+export KIP_ALLOW_POSTGRES_TEST_RESET=1
+pytest -m postgres_integration -q
+```
+
+Stop containers with `docker compose down`. Use `docker compose down -v` only when the disposable PostgreSQL volume should also be deleted.
+
+This Phase 2 review environment had no Docker CLI, so the Compose build, container health, PostgreSQL migration, and integration test remain unverified here.

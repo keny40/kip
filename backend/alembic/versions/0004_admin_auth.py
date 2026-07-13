@@ -32,7 +32,7 @@ def upgrade() -> None:
     bind.execute(
         sa.text(
             "UPDATE users "
-            "SET status = CASE WHEN is_active = 1 THEN 'active' ELSE 'inactive' END "
+            "SET status = CASE WHEN is_active THEN 'active' ELSE 'inactive' END "
             "WHERE status IS NULL OR trim(status) = ''"
         )
     )

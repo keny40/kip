@@ -1,11 +1,10 @@
 #!/bin/sh
 set -eu
 
-DB_PATH="${BACKEND_DB_PATH:-/app/backend/kip.db}"
+alembic upgrade head
 
-if [ ! -s "$DB_PATH" ]; then
-  echo "Bootstrapping demo database at $DB_PATH"
-  python /app/scripts/reset_demo_db.py
+if [ "${KIP_SEED_DEMO:-0}" = "1" ]; then
+  python /app/scripts/seed_phase2_data.py
 fi
 
 exec "$@"
