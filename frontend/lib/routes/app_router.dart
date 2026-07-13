@@ -12,6 +12,7 @@ class AppRouter {
   AppRouter._();
 
   static const String adminLogin = '/admin/login';
+  static const String adminRoot = '/admin';
   static const String adminHome = '/admin/home';
   static const String adminCsvUpload = '/admin/imports';
   static const String adminExternalPlayers = '/admin/external-players';
@@ -23,6 +24,7 @@ class AppRouter {
 
   static final Map<String, WidgetBuilder> routes = {
     adminLogin: (context) => AdminLoginScreen(),
+    adminRoot: (context) => AdminHomeScreen(),
     adminHome: (context) => AdminHomeScreen(),
     adminCsvUpload: (context) => AdminCsvUploadScreen(),
     adminExternalPlayers: (context) => AdminExternalPlayersScreen(),

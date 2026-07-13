@@ -18,7 +18,7 @@ from app.core.config import settings
 app = FastAPI(
     title="Keirin Intelligence Platform",
     version="0.2.0",
-    description="AI 湲곕컲 寃쎈쪣 ?곗씠??遺꾩꽍 SaaS ?뚮옯?쇱쓽 泥?踰덉㎏ ?섏쭅 湲곕뒫?낅땲??",
+    description="Phase 1 local MVP for keirin data management and analysis.",
 )
 
 app.add_middleware(
@@ -52,5 +52,5 @@ def root() -> dict[str, str]:
     return {
         "project": "Keirin Intelligence Platform",
         "status": "running",
-        "todo": "Remaining domain areas are still skeletons.",
+        "phase": "phase1_local_mvp",
     }

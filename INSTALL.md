@@ -22,19 +22,15 @@ uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 alembic upgrade head
 ```
 
+Current Phase 1 head is `0006_external_player_statistics`.
+
 6. Create an admin account for write access.
 
 ```bash
 python ../scripts/create_admin.py --email admin@example.com
 ```
 
-7. Create a new migration from the current SQLAlchemy models.
-
-```bash
-alembic revision --autogenerate -m "description"
-```
-
-8. Load sample data and reset the local demo database when needed.
+7. Load sample data and reset the local demo database when needed.
 
 ```bash
 python ../scripts/seed_sample_data.py
@@ -59,14 +55,25 @@ flutter run -d chrome \
   --dart-define=KIP_API_BASE_URL=http://127.0.0.1:8000
 ```
 
+5. Validate and build the app.
+
+```bash
+flutter analyze --no-pub
+flutter test --no-pub
+flutter build web --no-pub
+```
+
 ## Environment
 
-- `DATABASE_URL=sqlite:///./backend/kip.db`
+- `DATABASE_URL=sqlite:///./kip.db` when commands run from `backend/`
+- `DATA_GO_KR_SERVICE_KEY` is required only for data.go collector live calls; never save its value in tracked files or logs.
 - `CORS_ORIGINS=http://localhost:5001,http://127.0.0.1:5001,http://localhost:5000,http://127.0.0.1:5000`
 - `JWT_SECRET_KEY=dev-only-local-secret-key-for-kip-demo-2026`
 - `JWT_ALGORITHM=HS256`
 - `JWT_ACCESS_TOKEN_EXPIRE_MINUTES=60`
 - `CSV_IMPORT_MAX_BYTES=5242880`
+
+The listed JWT secret is a local development default only. Never use it in an operating environment; inject a strong independent `JWT_SECRET_KEY` through a secret-management mechanism.
 
 ## Notes
 
@@ -107,3 +114,5 @@ This exposes:
 - API docs: http://localhost:8000/docs
 
 The Docker demo uses SQLite, keeps the demo database on a mounted host path, and reuses the existing sample-data reset flow when the database is missing.
+
+The compose files exist, but Docker Desktop was not executed during the Phase 1 release verification. Treat this command as unverified until a separate Docker smoke test succeeds.

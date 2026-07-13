@@ -2,6 +2,6 @@ class ApiService {
   const ApiService();
 
   Future<void> ping() async {
-    // TODO: Connect to the FastAPI backend.
+    // Legacy placeholder. Active application flows use ApiClient.
   }
 }
