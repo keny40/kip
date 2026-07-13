@@ -124,6 +124,13 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                       ),
                       const SizedBox(height: 12),
                       OutlinedButton.icon(
+                        key: const Key('admin_data_quality_menu'),
+                        onPressed: () => _open(AppRouter.adminDataQuality),
+                        icon: const Icon(Icons.health_and_safety_outlined),
+                        label: const Text('데이터 품질'),
+                      ),
+                      const SizedBox(height: 12),
+                      OutlinedButton.icon(
                         onPressed: _logout,
                         icon: const Icon(Icons.logout),
                         label: const Text('로그아웃'),

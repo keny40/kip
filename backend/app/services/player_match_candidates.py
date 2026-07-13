@@ -43,6 +43,7 @@ class PlayerMatchCandidateService:
         grade: str | None = None,
         limit: int = 100,
         match_status: str | None = None,
+        source: str | None = None,
     ) -> list[PlayerMatchCandidate]:
         if match_status and match_status not in MATCH_STATUSES:
             raise ValueError("Unsupported match_status")
@@ -55,6 +56,8 @@ class PlayerMatchCandidateService:
             query = query.where(ExternalPlayerStatistic.period_number == period_number)
         if grade:
             query = query.where(ExternalPlayerStatistic.grade == grade)
+        if source:
+            query = query.where(ExternalPlayerStatistic.source == source)
         statistics = list(db.scalars(query.limit(limit)).all())
         results = [self._match_one(db, statistic) for statistic in statistics]
         if match_status:

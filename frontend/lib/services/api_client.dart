@@ -6,6 +6,7 @@ import 'package:http_parser/http_parser.dart';
 import '../config/app_config.dart';
 import '../models/admin_import.dart';
 import '../models/external_player_admin.dart';
+import '../models/data_quality_summary.dart';
 import '../models/analytics.dart';
 import '../models/player.dart';
 import '../models/player_statistics.dart';
@@ -329,6 +330,21 @@ class ApiClient {
           .map((item) =>
               PlayerMatchCandidateAdmin.fromJson(item as Map<String, dynamic>))
           .toList();
+    }
+    throw ApiException(_messageFromResponse(response),
+        statusCode: response.statusCode);
+  }
+
+  Future<DataQualitySummary> fetchAdminDataQualitySummary({
+    required DataQualityFilters filters,
+  }) async {
+    final response = await _client.get(
+      _uri('/api/v1/admin/data-quality-summary', filters.toQuery()),
+      headers: buildHeaders(authenticated: true),
+    );
+    if (response.statusCode == 200) {
+      return DataQualitySummary.fromJson(
+          jsonDecode(response.body) as Map<String, dynamic>);
     }
     throw ApiException(_messageFromResponse(response),
         statusCode: response.statusCode);

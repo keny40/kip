@@ -6,6 +6,7 @@ import '../screens/admin_login_screen.dart';
 import '../screens/admin_external_players_screen.dart';
 import '../screens/admin_external_player_statistics_screen.dart';
 import '../screens/admin_player_match_candidates_screen.dart';
+import '../screens/admin_data_quality_screen.dart';
 
 class AppRouter {
   AppRouter._();
@@ -18,6 +19,7 @@ class AppRouter {
       '/admin/external-player-statistics';
   static const String adminPlayerMatchCandidates =
       '/admin/player-match-candidates';
+  static const String adminDataQuality = '/admin/data-quality';
 
   static final Map<String, WidgetBuilder> routes = {
     adminLogin: (context) => AdminLoginScreen(),
@@ -27,5 +29,6 @@ class AppRouter {
     adminExternalPlayerStatistics: (context) =>
         AdminExternalPlayerStatisticsScreen(),
     adminPlayerMatchCandidates: (context) => AdminPlayerMatchCandidatesScreen(),
+    adminDataQuality: (context) => AdminDataQualityScreen(),
   };
 }
