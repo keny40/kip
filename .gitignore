@@ -10,4 +10,4 @@ frontend/build/
 __pycache__/
 *.py[cod]
 .pytest_cache/
-frontend-flutter-run.log
+*.log

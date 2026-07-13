@@ -1,0 +1,23 @@
+<!-- Truncated live-style fixture based on the 2026-07-13 data.go.kr response.
+     The service key, request URL, original response, and real names are not stored. -->
+<response>
+  <header>
+    <resultCode>00</resultCode>
+    <resultMsg>NORMAL SERVICE</resultMsg>
+  </header>
+  <body>
+    <totalCount>10</totalCount>
+    <items>
+      <item><stnd_yr>2025</stnd_yr><racer_nm>Sample Rider 01</racer_nm><period_no>20</period_no><racer_grd_cd>S1</racer_grd_cd><run_cnt>12</run_cnt><rank1_tcnt>5</rank1_tcnt><rank2_tcnt>3</rank2_tcnt><rank3_tcnt>2</rank3_tcnt><win_rate>41.7</win_rate><high_rate>66.7</high_rate><high_3_rate>83.3</high_3_rate></item>
+      <item><stnd_yr>2025</stnd_yr><racer_nm>Sample Rider 02</racer_nm><period_no>21</period_no><racer_grd_cd>A1</racer_grd_cd><run_cnt>11</run_cnt><rank1_tcnt>4</rank1_tcnt><rank2_tcnt>2</rank2_tcnt><rank3_tcnt>2</rank3_tcnt><win_rate>36.4</win_rate><high_rate>54.5</high_rate><high_3_rate>72.7</high_3_rate></item>
+      <item><stnd_yr>2025</stnd_yr><racer_nm>Sample Rider 03</racer_nm><period_no>22</period_no><racer_grd_cd>A2</racer_grd_cd><run_cnt>10</run_cnt><rank1_tcnt>3</rank1_tcnt><rank2_tcnt>3</rank2_tcnt><rank3_tcnt>1</rank3_tcnt><win_rate>30.0</win_rate><high_rate>60.0</high_rate><high_3_rate>70.0</high_3_rate></item>
+      <item><stnd_yr>2025</stnd_yr><racer_nm>Sample Rider 04</racer_nm><period_no>23</period_no><racer_grd_cd>B1</racer_grd_cd><run_cnt>9</run_cnt><rank1_tcnt>2</rank1_tcnt><rank2_tcnt>2</rank2_tcnt><rank3_tcnt>2</rank3_tcnt><win_rate>22.2</win_rate><high_rate>44.4</high_rate><high_3_rate>66.7</high_3_rate></item>
+      <item><stnd_yr>2025</stnd_yr><racer_nm>Sample Rider 05</racer_nm><period_no>24</period_no><racer_grd_cd>B2</racer_grd_cd><run_cnt>8</run_cnt><rank1_tcnt>1</rank1_tcnt><rank2_tcnt>2</rank2_tcnt><rank3_tcnt>2</rank3_tcnt><win_rate>12.5</win_rate><high_rate>37.5</high_rate><high_3_rate>62.5</high_3_rate></item>
+      <item><stnd_yr>2025</stnd_yr><racer_nm>Sample Rider 06</racer_nm><period_no>25</period_no><racer_grd_cd>S2</racer_grd_cd><run_cnt>13</run_cnt><rank1_tcnt>6</rank1_tcnt><rank2_tcnt>3</rank2_tcnt><rank3_tcnt>1</rank3_tcnt><win_rate>46.2</win_rate><high_rate>69.2</high_rate><high_3_rate>76.9</high_3_rate></item>
+      <item><stnd_yr>2025</stnd_yr><racer_nm>Sample Rider 07</racer_nm><period_no>26</period_no><racer_grd_cd>A1</racer_grd_cd><run_cnt>12</run_cnt><rank1_tcnt>4</rank1_tcnt><rank2_tcnt>4</rank2_tcnt><rank3_tcnt>2</rank3_tcnt><win_rate>33.3</win_rate><high_rate>66.7</high_rate><high_3_rate>83.3</high_3_rate></item>
+      <item><stnd_yr>2025</stnd_yr><racer_nm>Sample Rider 08</racer_nm><period_no>27</period_no><racer_grd_cd>A2</racer_grd_cd><run_cnt>11</run_cnt><rank1_tcnt>3</rank1_tcnt><rank2_tcnt>3</rank2_tcnt><rank3_tcnt>3</rank3_tcnt><win_rate>27.3</win_rate><high_rate>54.5</high_rate><high_3_rate>81.8</high_3_rate></item>
+      <item><stnd_yr>2025</stnd_yr><racer_nm>Sample Rider 09</racer_nm><period_no>28</period_no><racer_grd_cd>B1</racer_grd_cd><run_cnt>10</run_cnt><rank1_tcnt>2</rank1_tcnt><rank2_tcnt>3</rank2_tcnt><rank3_tcnt>2</rank3_tcnt><win_rate>20.0</win_rate><high_rate>50.0</high_rate><high_3_rate>70.0</high_3_rate></item>
+      <item><stnd_yr>2025</stnd_yr><racer_nm>Sample Rider 10</racer_nm><period_no>29</period_no><racer_grd_cd>B2</racer_grd_cd><run_cnt>9</run_cnt><rank1_tcnt>1</rank1_tcnt><rank2_tcnt>2</rank2_tcnt><rank3_tcnt>1</rank3_tcnt><win_rate>11.1</win_rate><high_rate>33.3</high_rate><high_3_rate>44.4</high_3_rate></item>
+    </items>
+  </body>
+</response>

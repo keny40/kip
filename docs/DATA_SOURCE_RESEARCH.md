@@ -211,3 +211,64 @@
 - KCYCLE 사이트의 내부 비공개 API 구조는 조사하지 않았다.
 - CAPTCHA가 운영 구간에서 간헐적으로 나타나는지 여부는 확인하지 못했다.
 - 요청 빈도 제한의 실제 서버 반응은 아직 측정하지 않았다.
+
+## 7) data.go.kr 경륜 선수정보 실제 응답 계약
+
+- 검증일: 2026-07-13
+- 호출 범위: `stnd_yr=2025`, `pageNo=1`, `numOfRows=10`, XML, dry-run
+- 공공데이터 설명과 실제 XML 사이에 선수 식별 필드 차이가 확인됐다.
+- 실제 10개 item에서 확인한 필드:
+  - `stnd_yr`
+  - `racer_nm`
+  - `period_no`
+  - `racer_grd_cd`
+  - `run_cnt`
+  - `rank1_tcnt`
+  - `rank2_tcnt`
+  - `rank3_tcnt`
+  - `win_rate`
+  - `high_rate`
+  - `high_3_rate`
+- 실제 응답에는 `racer_no`가 없었다.
+- 따라서 10건 모두 `MISSING_PLAYER_NUMBER`, 정규화 성공 0건이었다.
+- 과거 문서의 “고유 선수 3명/중복 7건” 및 “`racer_no` 중복 제거 live 검증” 표현은 잘못된 fixture에 근거한 것이므로 폐기한다.
+- 중복 판정 전에 필수 선수번호 검증에서 실패하므로 실제 중복 건수는 확인할 수 없다.
+
+### 식별 및 적재 정책
+
+- `period_no`는 공식 화면의 기수번호이며 선수 고유번호가 아니다.
+- `period_no`는 요청 필터 및 선수 기수 데이터로만 취급하고 `players.player_number`에 매핑하지 않는다.
+- `racer_nm` 단독 또는 `racer_nm + period_no`로 `players`를 upsert하지 않는다.
+- 이름 해시, 문자열 결합, 행 번호 등으로 가짜 선수번호를 생성하지 않는다.
+- `racer_no`가 없으면 `MISSING_PLAYER_NUMBER`로 거부하며 DB import를 시작하지 않는다.
+- 이름이 없으면 `MISSING_PLAYER_NAME`으로 거부한다.
+- grade/region/status 미확인 값은 `unknown` 정책을 유지한다.
+- 현재 API는 연도별 선수 성적 통계 staging 데이터 원천으로는 사용할 수 있지만 선수 마스터 직접 적재에는 사용할 수 없다.
+- 선수 마스터의 고유 식별키 출처가 확정될 때까지 `player_number` 매핑은 보류한다.
+
+## 8) KCYCLE 공개 선수 페이지 식별자 소규모 조사
+
+- 조사일: 2026-07-13
+- 범위: [선수조회](https://www.kcycle.or.kr/racer/info), [선수전적비교](https://www.kcycle.or.kr/racer/compare), 선수 3명 및 상세 1건
+- 공개 식별자 후보 필드명: `racerNo`
+- 형식: 8자리 숫자. 예시는 `1999****`, `2021****`, `2024****`처럼 마스킹한다.
+- 획득 위치:
+  - 선수조회 카드의 `onclick`: `fnMoveTo('/racer/info', '<racerNo>')`
+  - 상세 URL: `/racer/info/<racerNo>`
+  - 상세 화면 hidden input: `name="racerNo"`
+  - 선수전적비교 카드의 `onclick`: `fnAddRacer('<racerNo>')`
+- 표본 3명에서 선수조회와 선수전적비교 화면의 값이 각각 동일했고, 상세 URL과 hidden input도 같은 값을 유지했다.
+- 따라서 KCYCLE `racerNo`는 이름+기수보다 안정적인 공식 상세 ID 후보로 판단한다. 다만 data.go.kr 통계 item과 이 ID를 직접 연결하는 공개 필드는 이번 조사에서 확인하지 못했다.
+
+### 대체 식별정책 비교
+
+- A. KCYCLE `racerNo`
+  - 장점: 공식 공개 화면 여러 곳에서 동일하게 유지되는 상세 식별자다.
+  - 권장: 원형을 보존하는 `external_id`가 가장 안전하다. 기존 `player_number`로 사용할지는 전체 선수 및 과거 데이터 안정성 검증 후 결정한다.
+- B. `racer_nm + period_no` staging 자연키
+  - 장점: 현재 data.go.kr 통계 item만으로 구성할 수 있다.
+  - 제한: `players.player_number`로 사용하거나 문자열을 합쳐 가짜 번호를 만들면 안 된다.
+  - 표본 3명에서는 충돌이 없었지만, 이름 변경·동명이인·과거/현재 선수 범위까지 유일하다는 공식 보장은 확인하지 못했다.
+  - 권장: 선수 마스터와 분리된 연도별 통계 staging 테이블에서만 잠정 키로 사용한다.
+
+현재 권장 순서는 A의 KCYCLE `racerNo`와 data.go.kr 통계 행 사이의 공식 연결 가능성을 먼저 조사하고, 연결이 확인되기 전에는 B를 staging 범위로만 제한하는 것이다.
