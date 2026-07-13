@@ -362,3 +362,44 @@
 - 선수 사진은 저장하지 않는다.
 - 생년월일은 수집하거나 staging에 저장하지 않는다.
 - `external_id`는 공식 상세 페이지 식별자를 원형 보존하기 위한 값이다.
+
+## 11) data.go 선수 성적 통계 staging 및 후보 매칭 정책
+
+- data.go 경륜 선수정보 응답은 선수 마스터가 아니라 연도별 선수 성적 통계로 취급한다.
+- 실제 응답에는 안정적인 선수 고유번호가 없으므로 `players` 또는 `external_players`에 직접 적재하지 않는다.
+- 통계는 `external_player_statistics`에 저장하며 `players`/`external_players` FK를 두지 않는다.
+- 내부 자동 증가 PK 외에 이름+기수 결합 ID, hash, 가짜 `player_number`를 생성하지 않는다.
+
+### 실제 XML 매핑
+
+- `stnd_yr` → `standard_year`
+- `racer_nm` → `racer_name`
+- `period_no` → `period_number`
+- `racer_grd_cd` → `grade`
+- `run_cnt`, `run_day_tcnt` → 출전 횟수/일수
+- `rank1_tcnt`~`rank9_tcnt` → 순위별 횟수
+- `elim_tcnt` → 탈락 횟수
+- `win_rate`, `high_rate`, `high_3_rate` → 승률 통계
+- 누락 통계값은 NULL이며 명시적 0만 0으로 저장한다.
+
+### 잠정 중복 정책
+
+- 잠정키: `(source, standard_year, racer_name, period_number)`
+- 2026-07-13 축약 live-style fixture 10행에서는 잠정키 중복이 0건이었다.
+- 현재 셸에는 서비스 키가 없어 live 10행을 재호출하지 못했으므로 DB unique 제약은 추가하지 않았다.
+- import 서비스가 잠정키로 기존 행을 조회하고 created/updated/skipped를 판정한다.
+- period_number 누락 행은 staging에 저장할 수 있지만 후보 매칭에서는 `MISSING_PERIOD_NUMBER`로 분리한다.
+
+### 후보 매칭
+
+- KCYCLE `external_players`와 이름 정확 일치 + 기수 정확 일치만 사용한다.
+- fuzzy matching, 한글 이름 변형, 등급 기반 식별은 사용하지 않는다.
+- 등급은 `GRADE_MISMATCH` 보조 검증에만 사용하며 시점별로 달라질 수 있어 식별키가 아니다.
+- 상태: `UNIQUE_CANDIDATE`, `NO_CANDIDATE`, `MULTIPLE_CANDIDATES`, `MISSING_PERIOD_NUMBER`, `GRADE_MISMATCH`.
+- 후보 결과는 읽기 전용 리포트이며 FK 저장, 자동 승인, `players` 연결을 하지 않는다.
+
+### 운영 제한
+
+- live 검증은 서비스 키가 있을 때만 최대 10행·1페이지로 제한한다.
+- 운영 DB에는 0006 migration이나 통계 데이터를 자동 적용하지 않는다.
+- 서비스 키, 전체 요청 URL, 원본 XML은 로그·오류·리포트에 기록하지 않는다.

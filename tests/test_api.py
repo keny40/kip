@@ -18,6 +18,7 @@ from app.core.security import create_access_token, get_password_hash, verify_pas
 from app.db.session import get_db, get_engine
 from app.models.entries import Entry
 from app.models.external_players import ExternalPlayer
+from app.models.external_player_statistics import ExternalPlayerStatistic
 from app.models.players import Player
 from app.models.races import Race
 from app.models.results import Result
@@ -827,6 +828,45 @@ class ApiTestCase(unittest.TestCase):
             headers=self.admin_headers,
         )
         self.assertEqual(response.status_code, 405)
+
+    def test_external_player_statistics_and_candidate_api_are_admin_read_only(self) -> None:
+        with self.SessionLocal() as db:
+            external = ExternalPlayer(
+                source="kcycle", external_id="00120034", name="Candidate Rider",
+                period_number="06", grade="A1", region="unknown", status="active",
+                detail_url=None, source_updated_at=None,
+                collected_at=datetime(2026, 7, 13, tzinfo=timezone.utc),
+            )
+            statistic = ExternalPlayerStatistic(
+                source="data_go", standard_year="2025", racer_name="Candidate Rider",
+                period_number="06", grade="A1", run_count=10,
+                collected_at=datetime(2026, 7, 13, tzinfo=timezone.utc),
+            )
+            db.add_all([external, statistic]); db.commit(); db.refresh(statistic)
+            statistic_id = statistic.id
+
+        base = "/api/v1/admin/external-player-statistics"
+        self.assertEqual(self.client.get(base).status_code, 401)
+        listing = self.client.get(
+            base,
+            params={"year": "2025", "racer_name": "Candidate", "period_number": "06", "grade": "A1"},
+            headers=self.admin_headers,
+        )
+        self.assertEqual(listing.status_code, 200)
+        self.assertEqual(listing.json()["meta"]["total"], 1)
+        self.assertEqual(self.client.get(f"{base}/{statistic_id}", headers=self.admin_headers).status_code, 200)
+        candidates = self.client.get(
+            "/api/v1/admin/player-match-candidates",
+            params={
+                "year": "2025", "racer_name": "Candidate",
+                "period_number": "06", "grade": "A1",
+                "match_status": "UNIQUE_CANDIDATE",
+            },
+            headers=self.admin_headers,
+        )
+        self.assertEqual(candidates.status_code, 200)
+        self.assertEqual(candidates.json()[0]["match_status"], "UNIQUE_CANDIDATE")
+        self.assertEqual(self.client.post(base, json={}, headers=self.admin_headers).status_code, 405)
 
 
 if __name__ == "__main__":
