@@ -2,16 +2,19 @@ import 'package:flutter/material.dart';
 
 import '../models/analytics.dart';
 import '../services/api_client.dart';
+import '../utils/error_messages.dart';
 
 class AnalyticsDashboardScreen extends StatefulWidget {
   const AnalyticsDashboardScreen({super.key});
 
   @override
-  State<AnalyticsDashboardScreen> createState() => _AnalyticsDashboardScreenState();
+  State<AnalyticsDashboardScreen> createState() =>
+      _AnalyticsDashboardScreenState();
 }
 
 class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
-  late Future<AnalyticsDashboardSummary> _future = ApiClient().fetchAnalyticsDashboard();
+  late Future<AnalyticsDashboardSummary> _future =
+      ApiClient().fetchAnalyticsDashboard();
 
   void _reload() {
     setState(() {
@@ -46,7 +49,10 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
             return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError) {
-            return _ErrorState(message: snapshot.error.toString(), onRetry: _reload);
+            return _ErrorState(
+              message: userFacingLoadError,
+              onRetry: _reload,
+            );
           }
           final summary = snapshot.data;
           if (summary == null) {
@@ -63,7 +69,8 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
                 children: [
                   _MetricCard(label: '경주', value: '${summary.totalRaces}'),
                   _MetricCard(label: '예정', value: '${summary.scheduledRaces}'),
-                  _MetricCard(label: '진행 중', value: '${summary.inProgressRaces}'),
+                  _MetricCard(
+                      label: '진행 중', value: '${summary.inProgressRaces}'),
                   _MetricCard(label: '완료', value: '${summary.completedRaces}'),
                   _MetricCard(label: '선수', value: '${summary.totalPlayers}'),
                   _MetricCard(label: '결과', value: '${summary.totalResults}'),
@@ -134,7 +141,8 @@ class _ErrorState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('분석을 불러오지 못했습니다', style: Theme.of(context).textTheme.titleLarge),
+            Text('분석을 불러오지 못했습니다',
+                style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 8),
             Text(message, textAlign: TextAlign.center),
             const SizedBox(height: 16),

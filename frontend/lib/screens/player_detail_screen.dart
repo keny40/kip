@@ -5,6 +5,7 @@ import '../models/player_statistics.dart';
 import '../models/race.dart';
 import '../models/track.dart';
 import '../services/api_client.dart';
+import '../utils/error_messages.dart';
 import '../widgets/player_statistics_filter.dart';
 
 class PlayerDetailScreen extends StatefulWidget {
@@ -18,7 +19,8 @@ class PlayerDetailScreen extends StatefulWidget {
 
 class _PlayerDetailScreenState extends State<PlayerDetailScreen> {
   final ApiClient _client = ApiClient();
-  late final Future<PlayerRaceHistoryResponse> _playerFuture = _client.fetchPlayerRaceHistory(widget.playerId);
+  late final Future<PlayerRaceHistoryResponse> _playerFuture =
+      _client.fetchPlayerRaceHistory(widget.playerId);
 
   PlayerRaceHistoryResponse? _player;
   List<Track> _tracks = const [];
@@ -27,7 +29,8 @@ class _PlayerDetailScreenState extends State<PlayerDetailScreen> {
   PlayerStatisticsResponse? _statistics;
   bool _statsLoading = true;
   String? _statsError;
-  PlayerStatisticsFilterSelection _selection = const PlayerStatisticsFilterSelection();
+  PlayerStatisticsFilterSelection _selection =
+      const PlayerStatisticsFilterSelection();
 
   @override
   void initState() {
@@ -62,12 +65,13 @@ class _PlayerDetailScreenState extends State<PlayerDetailScreen> {
       }
       setState(() {
         _tracks = const [];
-        _trackLoadError = error.toString();
+        _trackLoadError = userFacingLoadError;
       });
     }
   }
 
-  Future<void> _reloadStatistics({PlayerStatisticsFilterSelection? selection}) async {
+  Future<void> _reloadStatistics(
+      {PlayerStatisticsFilterSelection? selection}) async {
     final player = _player;
     if (player == null) {
       return;
@@ -101,7 +105,7 @@ class _PlayerDetailScreenState extends State<PlayerDetailScreen> {
       }
       setState(() {
         _statsLoading = false;
-        _statsError = error.toString();
+        _statsError = userFacingLoadError;
       });
     }
   }
@@ -138,11 +142,12 @@ class _PlayerDetailScreenState extends State<PlayerDetailScreen> {
       body: FutureBuilder<PlayerRaceHistoryResponse>(
         future: _playerFuture,
         builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting && _player == null) {
+          if (snapshot.connectionState == ConnectionState.waiting &&
+              _player == null) {
             return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError && _player == null) {
-            return Center(child: Text(snapshot.error.toString()));
+            return const Center(child: Text(userFacingLoadError));
           }
           final player = _player ?? snapshot.data;
           if (player == null) {
@@ -201,12 +206,18 @@ class _PlayerDetailScreenState extends State<PlayerDetailScreen> {
                         children: [
                           Text(
                             '통계를 불러오지 못했습니다',
-                            style: TextStyle(color: Theme.of(context).colorScheme.onErrorContainer),
+                            style: TextStyle(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onErrorContainer),
                           ),
                           const SizedBox(height: 8),
                           Text(
                             _statsError!,
-                            style: TextStyle(color: Theme.of(context).colorScheme.onErrorContainer),
+                            style: TextStyle(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onErrorContainer),
                           ),
                           const SizedBox(height: 12),
                           FilledButton(
@@ -219,21 +230,35 @@ class _PlayerDetailScreenState extends State<PlayerDetailScreen> {
                   ),
                 ],
                 if (_statistics != null) ...[
-                  _StatCard(label: '총 경기', value: '${_statistics!.statistics.totalRaces}'),
-                  _StatCard(label: '1위', value: '${_statistics!.statistics.firstPlaceCount}'),
-                  _StatCard(label: '2위', value: '${_statistics!.statistics.secondPlaceCount}'),
-                  _StatCard(label: '3위', value: '${_statistics!.statistics.thirdPlaceCount}'),
-                  _StatCard(label: '최근 결과 수', value: '${_statistics!.statistics.recentFiveResults.length}'),
+                  _StatCard(
+                      label: '총 경기',
+                      value: '${_statistics!.statistics.totalRaces}'),
+                  _StatCard(
+                      label: '1위',
+                      value: '${_statistics!.statistics.firstPlaceCount}'),
+                  _StatCard(
+                      label: '2위',
+                      value: '${_statistics!.statistics.secondPlaceCount}'),
+                  _StatCard(
+                      label: '3위',
+                      value: '${_statistics!.statistics.thirdPlaceCount}'),
+                  _StatCard(
+                      label: '최근 결과 수',
+                      value:
+                          '${_statistics!.statistics.recentFiveResults.length}'),
                 ],
               ],
               const SizedBox(height: 16),
               Text('최근 5경주', style: Theme.of(context).textTheme.titleMedium),
               const SizedBox(height: 8),
-              ...(_statistics?.statistics.recentFiveResults ?? const <RaceResult>[]).map(
+              ...(_statistics?.statistics.recentFiveResults ??
+                      const <RaceResult>[])
+                  .map(
                 (result) => Card(
                   elevation: 0,
                   child: ListTile(
-                    title: Text('${result.raceDate} - ${result.trackName} ${result.raceNumber}경주'),
+                    title: Text(
+                        '${result.raceDate} - ${result.trackName} ${result.raceNumber}경주'),
                     subtitle: Text(
                       '시작 ${result.scheduledStartTime} / 순위 ${result.finishPosition} / 상태 ${result.resultStatus}',
                     ),
@@ -248,8 +273,10 @@ class _PlayerDetailScreenState extends State<PlayerDetailScreen> {
                 (item) => Card(
                   elevation: 0,
                   child: ListTile(
-                    title: Text('${item.raceDate} - ${item.trackName} ${item.raceNumber}경주'),
-                    subtitle: Text('결과 ${item.resultStatus} / 순위 ${item.finishPosition ?? "-"}'),
+                    title: Text(
+                        '${item.raceDate} - ${item.trackName} ${item.raceNumber}경주'),
+                    subtitle: Text(
+                        '결과 ${item.resultStatus} / 순위 ${item.finishPosition ?? "-"}'),
                     trailing: Text('점수 ${item.points ?? 0}'),
                   ),
                 ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/race.dart';
 import '../services/api_client.dart';
+import '../utils/error_messages.dart';
 import 'race_detail_screen.dart';
 
 class TodayRacesScreen extends StatefulWidget {
@@ -27,7 +28,7 @@ class _TodayRacesScreenState extends State<TodayRacesScreen> {
           if (snapshot.hasError) {
             return _StateMessage(
               title: '네트워크 오류',
-              message: snapshot.error.toString(),
+              message: userFacingLoadError,
             );
           }
           final races = snapshot.data ?? const [];
@@ -80,7 +81,8 @@ class _RaceCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('${race.trackName} · ${race.raceNumber}경주', style: theme.textTheme.titleMedium),
+              Text('${race.trackName} · ${race.raceNumber}경주',
+                  style: theme.textTheme.titleMedium),
               const SizedBox(height: 4),
               Text('${race.raceDate} · ${race.scheduledStartTime}'),
               const SizedBox(height: 8),

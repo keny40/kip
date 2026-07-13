@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/track.dart';
 import '../services/api_client.dart';
+import '../utils/error_messages.dart';
 import 'track_detail_screen.dart';
 
 class TracksScreen extends StatefulWidget {
@@ -42,7 +43,7 @@ class _TracksScreenState extends State<TracksScreen> {
           if (snapshot.hasError) {
             return _StateMessage(
               title: '네트워크 오류',
-              message: snapshot.error.toString(),
+              message: userFacingLoadError,
               actionLabel: '다시 시도',
               onAction: _reload,
             );
@@ -64,7 +65,8 @@ class _TracksScreenState extends State<TracksScreen> {
                 elevation: 0,
                 child: ListTile(
                   title: Text('${track.name} (${track.code})'),
-                  subtitle: Text('${track.region}${track.address == null ? '' : ' · ${track.address}'}'),
+                  subtitle: Text(
+                      '${track.region}${track.address == null ? '' : ' · ${track.address}'}'),
                   trailing: Chip(label: Text(track.status)),
                   onTap: () {
                     Navigator.of(context).push(
@@ -105,7 +107,9 @@ class _StateMessage extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(title, style: Theme.of(context).textTheme.titleLarge, textAlign: TextAlign.center),
+            Text(title,
+                style: Theme.of(context).textTheme.titleLarge,
+                textAlign: TextAlign.center),
             const SizedBox(height: 8),
             Text(message, textAlign: TextAlign.center),
             if (actionLabel != null && onAction != null) ...[

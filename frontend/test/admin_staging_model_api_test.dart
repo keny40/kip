@@ -25,6 +25,19 @@ void main() {
     expect(statistic.highRate, 25.5);
   });
 
+  test('statistics JSON parses decimal strings returned by the API', () {
+    final payload = _statisticJson()
+      ..['win_rate'] = '2.000'
+      ..['high_rate'] = '11.000'
+      ..['high_3_rate'] = '26.000';
+
+    final statistic = ExternalPlayerStatisticAdmin.fromJson(payload);
+
+    expect(statistic.winRate, 2);
+    expect(statistic.highRate, 11);
+    expect(statistic.high3Rate, 26);
+  });
+
   test('all match statuses have Korean labels', () {
     const expected = {
       'UNIQUE_CANDIDATE': '유일 후보',

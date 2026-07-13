@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/player.dart';
 import '../services/api_client.dart';
+import '../utils/error_messages.dart';
 import '../widgets/player_list_filter.dart';
 import 'player_detail_screen.dart';
 
@@ -66,19 +67,22 @@ class _PlayersScreenState extends State<PlayersScreen> {
       }
       setState(() {
         _loading = false;
-        _errorMessage = error.toString();
+        _errorMessage = userFacingLoadError;
       });
     }
   }
 
-  PlayerListFilterSelection _sanitizeSelection(List<PlayerSummary> players, PlayerListFilterSelection selection) {
+  PlayerListFilterSelection _sanitizeSelection(
+      List<PlayerSummary> players, PlayerListFilterSelection selection) {
     final grades = extractPlayerGrades(players);
     final regions = extractPlayerRegions(players);
     final statuses = extractPlayerStatuses(players);
     return selection.copyWith(
       clearGrade: selection.grade != null && !grades.contains(selection.grade),
-      clearRegion: selection.region != null && !regions.contains(selection.region),
-      clearStatus: selection.status != null && !statuses.contains(selection.status),
+      clearRegion:
+          selection.region != null && !regions.contains(selection.region),
+      clearStatus:
+          selection.status != null && !statuses.contains(selection.status),
     );
   }
 
@@ -177,16 +181,16 @@ class _PlayersScreenState extends State<PlayersScreen> {
                         ),
                       ),
                       const SizedBox(height: 12),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: PlayerListFilterSummary(
-                                  key: const Key('players_result_summary'),
-                                  totalCount: totalCount,
-                                  filteredCount: filteredPlayers.length,
-                                  selection: _selection,
-                                ),
-                              ),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: PlayerListFilterSummary(
+                              key: const Key('players_result_summary'),
+                              totalCount: totalCount,
+                              filteredCount: filteredPlayers.length,
+                              selection: _selection,
+                            ),
+                          ),
                           const SizedBox(width: 12),
                           OutlinedButton.icon(
                             key: const Key('players_filter_button'),
@@ -202,7 +206,9 @@ class _PlayersScreenState extends State<PlayersScreen> {
                       ],
                       if (_errorMessage != null && _players.isNotEmpty) ...[
                         const SizedBox(height: 12),
-                        Text(_errorMessage!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                        Text(_errorMessage!,
+                            style: TextStyle(
+                                color: Theme.of(context).colorScheme.error)),
                       ],
                       const SizedBox(height: 12),
                       if (_players.isEmpty)
@@ -217,7 +223,8 @@ class _PlayersScreenState extends State<PlayersScreen> {
                             children: [
                               const Text('검색 조건에 맞는 선수가 없습니다.'),
                               const SizedBox(height: 8),
-                              const Text('검색어나 필터를 초기화해 주세요.', textAlign: TextAlign.center),
+                              const Text('검색어나 필터를 초기화해 주세요.',
+                                  textAlign: TextAlign.center),
                               const SizedBox(height: 12),
                               FilledButton(
                                 key: const Key('players_reset_button'),
@@ -232,19 +239,23 @@ class _PlayersScreenState extends State<PlayersScreen> {
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
                           itemCount: filteredPlayers.length,
-                          separatorBuilder: (context, index) => const SizedBox(height: 12),
+                          separatorBuilder: (context, index) =>
+                              const SizedBox(height: 12),
                           itemBuilder: (context, index) {
                             final player = filteredPlayers[index];
                             return Card(
                               elevation: 0,
                               child: ListTile(
-                                title: Text('${player.playerNumber} · ${player.name}'),
-                                subtitle: Text('등급 ${player.grade} · 지역 ${player.region}'),
+                                title: Text(
+                                    '${player.playerNumber} · ${player.name}'),
+                                subtitle: Text(
+                                    '등급 ${player.grade} · 지역 ${player.region}'),
                                 trailing: Text(player.status),
                                 onTap: () {
                                   Navigator.of(context).push(
                                     MaterialPageRoute(
-                                      builder: (_) => PlayerDetailScreen(playerId: player.id),
+                                      builder: (_) => PlayerDetailScreen(
+                                          playerId: player.id),
                                     ),
                                   );
                                 },

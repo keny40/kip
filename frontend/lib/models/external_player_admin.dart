@@ -157,9 +157,9 @@ class ExternalPlayerStatisticAdmin {
         rankCounts: List<int?>.generate(
             9, (index) => json['rank${index + 1}_count'] as int?),
         eliminatedCount: json['eliminated_count'] as int?,
-        winRate: json['win_rate'] as num?,
-        highRate: json['high_rate'] as num?,
-        high3Rate: json['high_3_rate'] as num?,
+        winRate: _numOrNull(json['win_rate']),
+        highRate: _numOrNull(json['high_rate']),
+        high3Rate: _numOrNull(json['high_3_rate']),
         collectedAt: DateTime.parse(json['collected_at'] as String),
         createdAt: DateTime.parse(json['created_at'] as String),
         updatedAt: DateTime.parse(json['updated_at'] as String),
@@ -279,6 +279,13 @@ class PlayerMatchCandidateFilters {
 
 DateTime? _dateOrNull(dynamic value) =>
     value is String && value.isNotEmpty ? DateTime.parse(value) : null;
+
+num? _numOrNull(dynamic value) {
+  if (value == null) return null;
+  if (value is num) return value;
+  if (value is String) return num.tryParse(value);
+  return null;
+}
 
 Map<String, String> _cleanQuery(Map<String, String?> values) => {
       for (final entry in values.entries)

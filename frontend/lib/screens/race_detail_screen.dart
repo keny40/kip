@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/race.dart';
 import '../services/api_client.dart';
+import '../utils/error_messages.dart';
 
 class RaceDetailScreen extends StatefulWidget {
   const RaceDetailScreen({super.key, required this.raceId});
@@ -13,7 +14,8 @@ class RaceDetailScreen extends StatefulWidget {
 }
 
 class _RaceDetailScreenState extends State<RaceDetailScreen> {
-  late final Future<RaceDetail> _future = ApiClient().fetchRaceDetail(widget.raceId);
+  late final Future<RaceDetail> _future =
+      ApiClient().fetchRaceDetail(widget.raceId);
 
   @override
   Widget build(BuildContext context) {
@@ -26,7 +28,7 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
             return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError) {
-            return Center(child: Text(snapshot.error.toString()));
+            return const Center(child: Text(userFacingLoadError));
           }
           final race = snapshot.data;
           if (race == null) {
@@ -73,8 +75,10 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
                   (result) => Card(
                     elevation: 0,
                     child: ListTile(
-                      title: Text('${result.player.playerNumber}번 · ${result.player.name}'),
-                      subtitle: Text('순위 ${result.finishPosition} · 상태 ${result.resultStatus}'),
+                      title: Text(
+                          '${result.player.playerNumber}번 · ${result.player.name}'),
+                      subtitle: Text(
+                          '순위 ${result.finishPosition} · 상태 ${result.resultStatus}'),
                       trailing: Text(result.points?.toString() ?? '-'),
                     ),
                   ),

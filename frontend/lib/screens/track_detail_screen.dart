@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/track.dart';
 import '../services/api_client.dart';
+import '../utils/error_messages.dart';
 
 class TrackDetailScreen extends StatefulWidget {
   const TrackDetailScreen({super.key, required this.trackId});
@@ -49,7 +50,7 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
             return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError) {
-            return _ErrorState(message: snapshot.error.toString(), onRetry: _reload);
+            return _ErrorState(message: userFacingLoadError, onRetry: _reload);
           }
           final bundle = snapshot.data;
           if (bundle == null) {
@@ -66,14 +67,23 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
                 spacing: 12,
                 runSpacing: 12,
                 children: [
-                  _MetricCard(label: 'Total races', value: '${bundle.summary.totalRaces}'),
-                  _MetricCard(label: 'Completed', value: '${bundle.summary.completedRaces}'),
-                  _MetricCard(label: 'Entries', value: '${bundle.summary.totalEntries}'),
-                  _MetricCard(label: 'Unique players', value: '${bundle.summary.uniquePlayers}'),
+                  _MetricCard(
+                      label: 'Total races',
+                      value: '${bundle.summary.totalRaces}'),
+                  _MetricCard(
+                      label: 'Completed',
+                      value: '${bundle.summary.completedRaces}'),
+                  _MetricCard(
+                      label: 'Entries',
+                      value: '${bundle.summary.totalEntries}'),
+                  _MetricCard(
+                      label: 'Unique players',
+                      value: '${bundle.summary.uniquePlayers}'),
                 ],
               ),
               const SizedBox(height: 16),
-              Text('Recent races', style: Theme.of(context).textTheme.titleMedium),
+              Text('Recent races',
+                  style: Theme.of(context).textTheme.titleMedium),
               const SizedBox(height: 8),
               if (bundle.summary.recent30Races.isEmpty)
                 const _EmptyState(message: 'No races found for this track.')
@@ -88,7 +98,8 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
                   ),
                 ),
               const SizedBox(height: 16),
-              Text('Player performance', style: Theme.of(context).textTheme.titleMedium),
+              Text('Player performance',
+                  style: Theme.of(context).textTheme.titleMedium),
               const SizedBox(height: 8),
               if (bundle.players.isEmpty)
                 const _EmptyState(message: 'No player analytics available.')
@@ -101,7 +112,8 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
                       subtitle: Text(
                         'Grade ${player.grade} · Starts ${player.starts} · Wins ${player.wins} · Top3 ${player.top3}',
                       ),
-                      trailing: Text('${(player.winRate * 100).toStringAsFixed(1)}%'),
+                      trailing:
+                          Text('${(player.winRate * 100).toStringAsFixed(1)}%'),
                     ),
                   ),
                 ),
@@ -194,7 +206,8 @@ class _ErrorState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('Failed to load track detail', style: Theme.of(context).textTheme.titleLarge),
+            Text('Failed to load track detail',
+                style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 8),
             Text(message, textAlign: TextAlign.center),
             const SizedBox(height: 16),
