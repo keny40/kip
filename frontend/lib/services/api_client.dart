@@ -5,6 +5,7 @@ import 'package:http_parser/http_parser.dart';
 
 import '../config/app_config.dart';
 import '../models/admin_import.dart';
+import '../models/external_player_admin.dart';
 import '../models/analytics.dart';
 import '../models/player.dart';
 import '../models/player_statistics.dart';
@@ -68,7 +69,9 @@ class ApiClient {
     );
     if (response.statusCode == 200) {
       final payload = jsonDecode(response.body) as List<dynamic>;
-      return payload.map((item) => Track.fromJson(item as Map<String, dynamic>)).toList();
+      return payload
+          .map((item) => Track.fromJson(item as Map<String, dynamic>))
+          .toList();
     }
     throw ApiException(_messageFromResponse(response));
   }
@@ -90,7 +93,8 @@ class ApiClient {
       headers: buildHeaders(),
     );
     if (response.statusCode == 200) {
-      return TrackAnalyticsSummary.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
+      return TrackAnalyticsSummary.fromJson(
+          jsonDecode(response.body) as Map<String, dynamic>);
     }
     throw ApiException(_messageFromResponse(response));
   }
@@ -102,7 +106,9 @@ class ApiClient {
     );
     if (response.statusCode == 200) {
       final payload = jsonDecode(response.body) as List<dynamic>;
-      return payload.map((item) => TrackPlayerStat.fromJson(item as Map<String, dynamic>)).toList();
+      return payload
+          .map((item) => TrackPlayerStat.fromJson(item as Map<String, dynamic>))
+          .toList();
     }
     throw ApiException(_messageFromResponse(response));
   }
@@ -113,7 +119,8 @@ class ApiClient {
       headers: buildHeaders(),
     );
     if (response.statusCode == 200) {
-      return AnalyticsDashboardSummary.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
+      return AnalyticsDashboardSummary.fromJson(
+          jsonDecode(response.body) as Map<String, dynamic>);
     }
     throw ApiException(_messageFromResponse(response));
   }
@@ -124,7 +131,8 @@ class ApiClient {
       headers: buildHeaders(),
     );
     if (response.statusCode == 200) {
-      return RaceDetail.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
+      return RaceDetail.fromJson(
+          jsonDecode(response.body) as Map<String, dynamic>);
     }
     throw ApiException(_messageFromResponse(response));
   }
@@ -137,7 +145,9 @@ class ApiClient {
     if (response.statusCode == 200) {
       final payload = jsonDecode(response.body) as Map<String, dynamic>;
       final items = payload['items'] as List<dynamic>;
-      return items.map((item) => PlayerSummary.fromJson(item as Map<String, dynamic>)).toList();
+      return items
+          .map((item) => PlayerSummary.fromJson(item as Map<String, dynamic>))
+          .toList();
     }
     throw ApiException(_messageFromResponse(response));
   }
@@ -148,7 +158,8 @@ class ApiClient {
       headers: buildHeaders(),
     );
     if (response.statusCode == 200) {
-      return PlayerDetail.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
+      return PlayerDetail.fromJson(
+          jsonDecode(response.body) as Map<String, dynamic>);
     }
     throw ApiException(_messageFromResponse(response));
   }
@@ -159,7 +170,8 @@ class ApiClient {
       headers: buildHeaders(),
     );
     if (response.statusCode == 200) {
-      return PlayerRaceHistoryResponse.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
+      return PlayerRaceHistoryResponse.fromJson(
+          jsonDecode(response.body) as Map<String, dynamic>);
     }
     throw ApiException(_messageFromResponse(response));
   }
@@ -189,11 +201,13 @@ class ApiClient {
       query['grade'] = grade;
     }
     final response = await _client.get(
-      _uri('/api/v1/players/$playerId/statistics', query.isEmpty ? null : query),
+      _uri(
+          '/api/v1/players/$playerId/statistics', query.isEmpty ? null : query),
       headers: buildHeaders(),
     );
     if (response.statusCode == 200) {
-      return PlayerStatisticsResponse.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
+      return PlayerStatisticsResponse.fromJson(
+          jsonDecode(response.body) as Map<String, dynamic>);
     }
     throw ApiException(_messageFromResponse(response));
   }
@@ -230,16 +244,103 @@ class ApiClient {
 
     final response = await http.Response.fromStream(streamedResponse);
     if (response.statusCode >= 200 && response.statusCode < 300) {
-      return AdminImportResult.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
+      return AdminImportResult.fromJson(
+          jsonDecode(response.body) as Map<String, dynamic>);
     }
-    throw ApiException(_messageFromResponse(response), statusCode: response.statusCode);
+    throw ApiException(_messageFromResponse(response),
+        statusCode: response.statusCode);
+  }
+
+  Future<ExternalPlayerPage> fetchAdminExternalPlayers({
+    required ExternalPlayerFilters filters,
+    int page = 1,
+    int pageSize = 20,
+  }) async {
+    final response = await _client.get(
+      _uri('/api/v1/admin/external-players',
+          filters.toQuery(page: page, pageSize: pageSize)),
+      headers: buildHeaders(authenticated: true),
+    );
+    if (response.statusCode == 200) {
+      return ExternalPlayerPage.fromJson(
+          jsonDecode(response.body) as Map<String, dynamic>);
+    }
+    throw ApiException(_messageFromResponse(response),
+        statusCode: response.statusCode);
+  }
+
+  Future<ExternalPlayerAdmin> fetchAdminExternalPlayer(int id) async {
+    final response = await _client.get(
+      _uri('/api/v1/admin/external-players/$id'),
+      headers: buildHeaders(authenticated: true),
+    );
+    if (response.statusCode == 200) {
+      return ExternalPlayerAdmin.fromJson(
+          jsonDecode(response.body) as Map<String, dynamic>);
+    }
+    throw ApiException(_messageFromResponse(response),
+        statusCode: response.statusCode);
+  }
+
+  Future<ExternalPlayerStatisticPage> fetchAdminExternalPlayerStatistics({
+    required ExternalPlayerStatisticFilters filters,
+    int page = 1,
+    int pageSize = 20,
+  }) async {
+    final response = await _client.get(
+      _uri('/api/v1/admin/external-player-statistics',
+          filters.toQuery(page: page, pageSize: pageSize)),
+      headers: buildHeaders(authenticated: true),
+    );
+    if (response.statusCode == 200) {
+      return ExternalPlayerStatisticPage.fromJson(
+          jsonDecode(response.body) as Map<String, dynamic>);
+    }
+    throw ApiException(_messageFromResponse(response),
+        statusCode: response.statusCode);
+  }
+
+  Future<ExternalPlayerStatisticAdmin> fetchAdminExternalPlayerStatistic(
+      int id) async {
+    final response = await _client.get(
+      _uri('/api/v1/admin/external-player-statistics/$id'),
+      headers: buildHeaders(authenticated: true),
+    );
+    if (response.statusCode == 200) {
+      return ExternalPlayerStatisticAdmin.fromJson(
+          jsonDecode(response.body) as Map<String, dynamic>);
+    }
+    throw ApiException(_messageFromResponse(response),
+        statusCode: response.statusCode);
+  }
+
+  Future<List<PlayerMatchCandidateAdmin>> fetchAdminPlayerMatchCandidates({
+    required PlayerMatchCandidateFilters filters,
+    int limit = 100,
+  }) async {
+    final response = await _client.get(
+      _uri('/api/v1/admin/player-match-candidates',
+          filters.toQuery(limit: limit)),
+      headers: buildHeaders(authenticated: true),
+    );
+    if (response.statusCode == 200) {
+      final payload = jsonDecode(response.body) as List<dynamic>;
+      return payload
+          .map((item) =>
+              PlayerMatchCandidateAdmin.fromJson(item as Map<String, dynamic>))
+          .toList();
+    }
+    throw ApiException(_messageFromResponse(response),
+        statusCode: response.statusCode);
   }
 
   List<RaceSummary> _parseRaceList(http.Response response) {
     if (response.statusCode == 200) {
       final payload = jsonDecode(response.body) as Map<String, dynamic>;
       final items = payload['items'] as List<dynamic>;
-      return items.map((item) => RaceSummary.fromJson(item as Map<String, dynamic>)).toList();
+      return items
+          .map((item) => RaceSummary.fromJson(item as Map<String, dynamic>))
+          .toList();
     }
     throw ApiException(_messageFromResponse(response));
   }
