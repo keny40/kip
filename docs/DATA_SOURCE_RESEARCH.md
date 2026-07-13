@@ -272,3 +272,93 @@
   - 권장: 선수 마스터와 분리된 연도별 통계 staging 테이블에서만 잠정 키로 사용한다.
 
 현재 권장 순서는 A의 KCYCLE `racerNo`와 data.go.kr 통계 행 사이의 공식 연결 가능성을 먼저 조사하고, 연결이 확인되기 전에는 B를 staging 범위로만 제한하는 것이다.
+
+## 9) KCYCLE 선수 마스터 preview 수집 계약
+
+- 검증일: 2026-07-13
+- 공식 화면:
+  - [선수조회](https://www.kcycle.or.kr/racer/info)
+  - [선수전적비교](https://www.kcycle.or.kr/racer/compare)
+- 인증, 서비스 키, 로그인 세션 없이 공개 응답을 확인했다.
+
+### 실제 요청과 응답 형식
+
+- 기본 선수 목록: `GET https://www.kcycle.or.kr/racer/info`
+  - 응답: 전체 페이지 HTML
+  - 기본 필터: `retiredYn=N`인 현역선수
+- 선수조회 검색/AJAX: `POST /racer/info`
+  - 응답: `.layoutContArea`를 교체하는 HTML fragment
+  - 공개 검색 필드: `retiredYn`, `racerGrdCd`, `gisu`, `trngPlcCd`, `searchRacer`, `fstLet`
+- 선수전적비교 검색: `POST /racer/compare`
+  - 응답: HTML fragment
+- 비교 선택 갱신: `POST /racer/compare/update`
+  - `compareRacerNo`를 사용하며 비교 선수는 화면 스크립트상 최대 3명이다.
+- 별도 JSON 목록 API는 확인되지 않았다.
+
+### 목록과 페이지네이션
+
+- 기본 현역 목록은 575개 `a.prsn` 카드가 단일 HTML 응답에 포함됐다.
+- 서버 페이지 번호 및 page-size 파라미터는 확인되지 않았다.
+- 화면은 초성 그룹과 검색 필터를 사용하며 숫자 페이지네이션은 없다.
+- KIP preview 수집기의 `page_size`는 서버 요청값이 아니라 응답에서 정규화할 최대 카드 수이며 1~10으로 제한한다.
+- `max_pages`는 1만 허용한다.
+
+### racerNo 및 공개 필드
+
+- `racerNo`: 카드의 `onclick="fnMoveTo('/racer/info', '<8자리 숫자>')"` 두 번째 인수
+- 사진 경로: `/player/<racerNo>.jpg`
+- 상세 URL: `/racer/info/<racerNo>`
+- 선수명: 카드의 `b.name`
+- 등급과 기수: 카드의 `span.cate`
+- 기본 목록 상태: 현역(`retiredYn=N`), KIP 값 `active`
+- 훈련지는 검색 조건으로 공개되지만 기본 카드에는 선수별 값이 포함되지 않아 preview에서는 `unknown`이다.
+- 상세 화면에는 출생일, 출신지/출신팀 등의 정보가 공개된다. 초기 preview 수집기는 추가 상세 요청을 하지 않는다.
+- `external_id`는 앞자리 0을 보존하는 문자열로 저장하며 숫자 변환, 이름/기수 결합, hash 생성을 금지한다.
+
+### 2026-07-13 소규모 live dry-run
+
+- HTTP 성공: true
+- 응답 카드: 575
+- 검사/정규화: 첫 10건 / 10건 성공
+- `MISSING_EXTERNAL_ID`: 0
+- `MISSING_PLAYER_NAME`: 0
+- 중복 `racerNo`: 0
+- 결과는 Git 무시 대상인 `tmp/kcycle_players_preview.csv`에 기록했다.
+- DB insert/update 코드는 없으며 운영 DB를 사용하지 않았다.
+
+### data.go 통계 후보 매칭
+
+현재 data.go live-style fixture는 실명을 제거한 10개 샘플이므로 KCYCLE live preview와의 실데이터 연결성을 검증할 수 없다. 형식적 비교 결과는 다음과 같다.
+
+- `name + period_number`: 유일 후보 0, 후보 없음 10, 복수 후보 0
+- `name + grade`: 유일 후보 0, 후보 없음 10, 복수 후보 0
+- `name + period_number + grade`: 유일 후보 0, 후보 없음 10, 복수 후보 0
+- 10건 모두 이름 단계에서 일치 후보가 없었다.
+
+자동 매칭 전에는 원본 data.go 이름 표기, 기수 숫자 정규화, 시점별 등급 변화, 동명이인, 은퇴선수 포함 여부를 검증해야 한다. 등급은 시점에 따라 변할 수 있으므로 식별키로 사용하면 안 된다.
+
+### robots 및 이용정책
+
+- [robots.txt](https://www.kcycle.or.kr/robots.txt)는 고객 게시판 일부와 스팸 URL 패턴을 제외하고 기본 `Allow: /`를 선언하며 `/racer/info`를 금지하지 않는다.
+- [자료무단복제금지](https://www.kcycle.or.kr/customerplaza/terms/reproduction)는 승인 없는 사이트 자료의 상업적 무단 복제·전송·배포를 금지한다.
+- 따라서 현재 구현은 최대 10건의 저빈도 개발 preview로 제한한다. 정기·전체·상업적 수집 전에는 KCYCLE 측 이용 승인과 재배포 범위를 별도로 확인해야 한다.
+
+## 10) KCYCLE 외부 선수 staging 저장 정책
+
+- KCYCLE preview CSV는 `external_players` staging 테이블에만 가져온다.
+- KCYCLE `racerNo`는 `external_id` 문자열 원문으로 보존하며 앞자리 0을 유지한다.
+- 식별 unique 기준은 `(source, external_id)`이다.
+- `players` 테이블과 자동 연결하지 않는다.
+- 이름+기수 결합값, hash, 임의 번호를 식별자로 생성하지 않는다.
+- data.go 통계와 자동 결합하지 않는다.
+- CSV CLI는 명시적인 `--dry-run` 또는 `--apply` 선택과 대상 `--database-url`을 요구한다.
+- 관리자 API는 staging 조회만 제공하며 생성·수정·삭제는 제공하지 않는다.
+
+### 법적·운영 제한
+
+- live 수집 검증은 최대 10명 preview로 제한한다.
+- preview 데이터는 개발 검증 용도다.
+- 전체·정기·상용 수집은 KCYCLE 이용 승인과 재배포 범위 확인 전까지 보류한다.
+- 선수 사진은 저장하지 않는다.
+- 생년월일은 수집하거나 staging에 저장하지 않는다.
+- `external_id`는 공식 상세 페이지 식별자를 원형 보존하기 위한 값이다.

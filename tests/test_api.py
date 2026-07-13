@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
@@ -16,6 +17,7 @@ from app.db.base import Base
 from app.core.security import create_access_token, get_password_hash, verify_password
 from app.db.session import get_db, get_engine
 from app.models.entries import Entry
+from app.models.external_players import ExternalPlayer
 from app.models.players import Player
 from app.models.races import Race
 from app.models.results import Result
@@ -766,6 +768,65 @@ class ApiTestCase(unittest.TestCase):
         payload = response.json()
         self.assertEqual(payload["failed"], 1)
         self.assertEqual(payload["errors"][0]["error_code"], "LOOKUP_ERROR")
+
+    def test_external_player_admin_api_requires_auth_and_supports_filters(self) -> None:
+        with self.SessionLocal() as db:
+            first = ExternalPlayer(
+                source="kcycle",
+                external_id="00120034",
+                name="Alpha Rider",
+                period_number="06",
+                grade="A1",
+                region="unknown",
+                status="active",
+                detail_url="https://www.kcycle.or.kr/racer/info/00120034",
+                source_updated_at=None,
+                collected_at=datetime(2026, 7, 13, tzinfo=timezone.utc),
+            )
+            second = ExternalPlayer(
+                source="kcycle",
+                external_id="20240002",
+                name="Beta Rider",
+                period_number="29",
+                grade="S1",
+                region="unknown",
+                status="inactive",
+                detail_url="https://www.kcycle.or.kr/racer/info/20240002",
+                source_updated_at=None,
+                collected_at=datetime(2026, 7, 13, tzinfo=timezone.utc),
+            )
+            db.add_all([first, second])
+            db.commit()
+            db.refresh(first)
+            first_id = first.id
+
+        unauthorized = self.client.get("/api/v1/admin/external-players")
+        self.assertEqual(unauthorized.status_code, 401)
+
+        response = self.client.get(
+            "/api/v1/admin/external-players",
+            params={"source": "kcycle", "name": "Alpha", "period_number": "06", "grade": "A1", "status": "active"},
+            headers=self.admin_headers,
+        )
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload["meta"]["total"], 1)
+        self.assertEqual(payload["items"][0]["external_id"], "00120034")
+
+        detail = self.client.get(
+            f"/api/v1/admin/external-players/{first_id}",
+            headers=self.admin_headers,
+        )
+        self.assertEqual(detail.status_code, 200)
+        self.assertEqual(detail.json()["name"], "Alpha Rider")
+
+    def test_external_player_admin_api_is_read_only(self) -> None:
+        response = self.client.post(
+            "/api/v1/admin/external-players",
+            json={},
+            headers=self.admin_headers,
+        )
+        self.assertEqual(response.status_code, 405)
 
 
 if __name__ == "__main__":

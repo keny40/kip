@@ -1,4 +1,5 @@
 from app.models.entries import Entry
+from app.models.external_players import ExternalPlayer
 from app.models.lineups import Lineup
 from app.models.logs import Log
 from app.models.odds import Odd
