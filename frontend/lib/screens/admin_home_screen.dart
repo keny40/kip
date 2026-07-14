@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/current_user.dart';
 import '../routes/app_router.dart';
 import '../services/auth_service.dart';
+import '../utils/display_labels.dart';
 
 class AdminHomeScreen extends StatefulWidget {
   AdminHomeScreen({
@@ -45,6 +46,8 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
   }
 
   void _open(String route) => Navigator.of(context).pushNamed(route);
+
+  String _roleLabel(String role) => role == 'admin' ? '관리자' : role;
 
   @override
   Widget build(BuildContext context) {
@@ -90,14 +93,14 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                       const SizedBox(height: 16),
                       Text('이메일: ${user.email}'),
                       const SizedBox(height: 8),
-                      Text('역할: ${user.role}'),
+                      Text('역할: ${_roleLabel(user.role)}'),
                       const SizedBox(height: 8),
-                      Text('상태: ${user.status}'),
+                      Text('상태: ${statusLabel(user.status)}'),
                       const SizedBox(height: 24),
                       FilledButton.icon(
                         onPressed: _openCsvUpload,
                         icon: const Icon(Icons.upload_file),
-                        label: const Text('CSV 업로드'),
+                        label: const Text('CSV 가져오기'),
                       ),
                       const SizedBox(height: 12),
                       OutlinedButton.icon(
@@ -136,7 +139,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                         label: const Text('로그아웃'),
                       ),
                       const SizedBox(height: 16),
-                      const Text('Staging 데이터와 매칭 후보는 읽기 전용으로 제공됩니다.'),
+                      const Text('임시 저장 데이터와 매칭 후보는 읽기 전용으로 제공됩니다.'),
                     ],
                   ),
                 ),

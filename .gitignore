@@ -16,3 +16,4 @@ __pycache__/
 *.backup
 tmp/
 dist/
+artifacts/models/

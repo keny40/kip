@@ -80,6 +80,6 @@ void main() {
 
     expect(find.text('등급 A1'), findsOneWidget);
     expect(find.text('지역 광명'), findsOneWidget);
-    expect(find.text('상태 active'), findsOneWidget);
+    expect(find.text('상태 활성'), findsOneWidget);
   });
 }

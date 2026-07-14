@@ -5,6 +5,7 @@ import '../models/player_statistics.dart';
 import '../models/race.dart';
 import '../models/track.dart';
 import '../services/api_client.dart';
+import '../utils/display_labels.dart';
 import '../utils/error_messages.dart';
 import '../widgets/player_statistics_filter.dart';
 
@@ -260,7 +261,7 @@ class _PlayerDetailScreenState extends State<PlayerDetailScreen> {
                     title: Text(
                         '${result.raceDate} - ${result.trackName} ${result.raceNumber}경주'),
                     subtitle: Text(
-                      '시작 ${result.scheduledStartTime} / 순위 ${result.finishPosition} / 상태 ${result.resultStatus}',
+                      '시작 ${result.scheduledStartTime} / 순위 ${result.finishPosition} / 상태 ${statusLabel(result.resultStatus)}',
                     ),
                     trailing: Text(result.points?.toString() ?? '-'),
                   ),
@@ -276,7 +277,7 @@ class _PlayerDetailScreenState extends State<PlayerDetailScreen> {
                     title: Text(
                         '${item.raceDate} - ${item.trackName} ${item.raceNumber}경주'),
                     subtitle: Text(
-                        '결과 ${item.resultStatus} / 순위 ${item.finishPosition ?? "-"}'),
+                        '결과 ${statusLabel(item.resultStatus)} / 순위 ${item.finishPosition ?? "-"}'),
                     trailing: Text('점수 ${item.points ?? 0}'),
                   ),
                 ),

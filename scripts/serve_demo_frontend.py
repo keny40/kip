@@ -3,9 +3,29 @@ from __future__ import annotations
 import argparse
 import http.client
 import json
+import shutil
+import sys
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlsplit
+
+
+CLIENT_DISCONNECT_ERRNOS = {32, 104, 10053, 10054}
+CLIENT_DISCONNECT_EXCEPTIONS = (BrokenPipeError, ConnectionAbortedError, ConnectionResetError)
+
+
+def is_client_disconnect(exc: BaseException) -> bool:
+    if isinstance(exc, CLIENT_DISCONNECT_EXCEPTIONS):
+        return True
+    return isinstance(exc, OSError) and getattr(exc, "errno", None) in CLIENT_DISCONNECT_ERRNOS
+
+
+class DemoThreadingHTTPServer(ThreadingHTTPServer):
+    def handle_error(self, request, client_address):  # noqa: ANN001
+        exc = sys.exc_info()[1]
+        if exc is not None and is_client_disconnect(exc):
+            return
+        super().handle_error(request, client_address)
 
 
 class DemoHandler(SimpleHTTPRequestHandler):
@@ -30,6 +50,14 @@ class DemoHandler(SimpleHTTPRequestHandler):
             return
         self.send_error(405, "Method not allowed")
 
+    def copyfile(self, source, outputfile) -> None:  # noqa: ANN001
+        try:
+            shutil.copyfileobj(source, outputfile)
+        except OSError as exc:
+            if is_client_disconnect(exc):
+                return
+            raise
+
     def _proxy(self) -> None:
         length = int(self.headers.get("Content-Length", "0"))
         body = self.rfile.read(length) if length else None
@@ -43,21 +71,39 @@ class DemoHandler(SimpleHTTPRequestHandler):
             connection.request(self.command, self.path, body=body, headers=headers)
             response = connection.getresponse()
             payload = response.read()
-            self.send_response(response.status)
-            self.send_header("Content-Type", response.getheader("Content-Type", "application/json"))
-            self.send_header("Content-Length", str(len(payload)))
-            self.send_header("Cache-Control", "no-store" if self.path.startswith("/api/") else "no-cache")
-            self.end_headers()
-            self.wfile.write(payload)
-        except OSError:
+            self._send_payload(
+                response.status,
+                payload,
+                response.getheader("Content-Type", "application/json"),
+                "no-store" if self.path.startswith("/api/") else "no-cache",
+            )
+        except OSError as exc:
+            if is_client_disconnect(exc):
+                return
             payload = json.dumps({"detail": "Backend unavailable"}).encode()
-            self.send_response(502)
-            self.send_header("Content-Type", "application/json")
-            self.send_header("Content-Length", str(len(payload)))
-            self.end_headers()
-            self.wfile.write(payload)
+            self._send_payload(502, payload, "application/json", None)
         finally:
             connection.close()
+
+    def _send_payload(
+        self,
+        status: int,
+        payload: bytes,
+        content_type: str,
+        cache_control: str | None,
+    ) -> None:
+        try:
+            self.send_response(status)
+            self.send_header("Content-Type", content_type)
+            self.send_header("Content-Length", str(len(payload)))
+            if cache_control:
+                self.send_header("Cache-Control", cache_control)
+            self.end_headers()
+            self.wfile.write(payload)
+        except OSError as exc:
+            if is_client_disconnect(exc):
+                return
+            raise
 
 
 def main() -> None:
@@ -73,7 +119,7 @@ def main() -> None:
         *values, directory=str(directory), **kwargs
     )
     DemoHandler.backend_port = args.backend_port
-    server = ThreadingHTTPServer(("127.0.0.1", args.port), handler)
+    server = DemoThreadingHTTPServer(("127.0.0.1", args.port), handler)
     server.serve_forever()
 
 

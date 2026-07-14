@@ -381,7 +381,7 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('관리자 CSV 업로드'),
+        title: const Text('CSV 가져오기'),
         leading: BackButton(
           onPressed: () {
             if (Navigator.of(context).canPop()) {
@@ -416,7 +416,7 @@ class _AdminCsvUploadScreenState extends State<AdminCsvUploadScreen> {
                         .toList(),
                     onChanged: _isValidating || _isApplying ? null : _changeImportType,
                     decoration: const InputDecoration(
-                      labelText: 'Import type',
+                      labelText: '가져오기 유형',
                       border: OutlineInputBorder(),
                     ),
                   ),

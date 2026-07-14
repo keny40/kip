@@ -403,3 +403,99 @@
 - live 검증은 서비스 키가 있을 때만 최대 10행·1페이지로 제한한다.
 - 운영 DB에는 0006 migration이나 통계 데이터를 자동 적용하지 않는다.
 - 서비스 키, 전체 요청 URL, 원본 XML은 로그·오류·리포트에 기록하지 않는다.
+
+## 12) 예측 MVP용 과거 경주 데이터 검토
+
+- 현재 운영 SQLite 데이터는 `races=3`, `entries=15`, `results=8`, `players=13` 수준이라 실제 예측 모델 학습에는 부족하다.
+- 완료 상태 경주는 1건뿐이고, 결과가 연결된 출전 행은 8행이다. 결과 누락 출전 행은 7행이다.
+- 과거 경주 수집 후보는 다음 공식 출처다.
+  - data.go.kr 경륜 `출주표_GW`: <https://www.data.go.kr/data/15107830/openapi.do>
+  - data.go.kr 경륜 `경주결과_GW`: <https://www.data.go.kr/data/15107816/openapi.do>
+  - KCYCLE 확정출주표: <https://www.kcycle.or.kr/race/card/decision>
+  - KCYCLE 통합경주결과: <https://www.kcycle.or.kr/race/result/general>
+- 예측 학습 행은 “한 경주의 한 출전 선수” 1행으로 정의한다.
+- 경주 전 알 수 없는 현재 경기 최종 순위, 현재 경기 이후 갱신된 누적 통계, 미래 경기 결과는 feature로 사용하지 않는다.
+- 공식 출처에서 안정적인 선수 식별자가 확인되지 않는 데이터는 이름, 이름+기수, hash 등으로 가짜 ID를 만들지 않고 preview 또는 staging 구조에만 둔다.
+- 초기 학습 readiness 기준은 완료 경주 500건, 유효 출전 행 3,000건, 선수당 과거 경기 중앙값 5건, `result_rank` 누락률 5% 미만이다.
+- 기준 미달 시 모델 학습과 예측 확률 생성을 중단하고 `INSUFFICIENT_TRAINING_DATA`로 보고한다.
+
+### data.go.kr 출주표/경주결과 API 명세 확인
+
+2026-07-14 기준 공공데이터포털 OpenAPI 상세 페이지의 Swagger JSON에서 다음을 확인했다.
+
+#### 경륜-출주표_GW
+
+- catalog: <https://www.data.go.kr/data/15107830/openapi.do>
+- gateway endpoint: `https://apis.data.go.kr/B551014/SRVC_OD_API_CRA_RACE_ORGAN/TODZ_API_CRA_RACE_ORGAN_I`
+- method: `GET`
+- format: JSON/XML
+- pagination: `pageNo`, `numOfRows`
+- required query: `serviceKey`, `resultType`
+- optional query: `meet_nm`, `stnd_yr`, `week_tcnt`
+- 주요 응답 필드:
+  - `meet_nm`: 경륜장명
+  - `stnd_yr`: 경기연도
+  - `race_ymd`: 경주일자
+  - `race_no`: 경주번호
+  - `back_no`: 등번호/출전 번호
+  - `racer_nm`: 선수명
+  - `period_no`: 기수번호
+  - `racer_grd_cd`: 등급코드
+  - `dptre_tm`: 출발시각
+- 문서상 별도 공식 race ID는 확인되지 않았다.
+- 문서상 별도 공식 player/racer ID는 확인되지 않았다.
+- `back_no`는 출전 번호이며 선수 고유번호로 사용하지 않는다.
+
+#### 경륜-경주결과_GW
+
+- catalog: <https://www.data.go.kr/data/15107816/openapi.do>
+- gateway endpoint: `https://apis.data.go.kr/B551014/SRVC_TODZ_CRA_RACE_RESULT/TODZ_API_CRA_RACE_RESULT`
+- method: `GET`
+- format: JSON/XML
+- pagination: `pageNo`, `numOfRows`
+- required query: `serviceKey`, `resultType`, `stnd_yr`, `meet_nm`, `week_tcnt`, `day_tcnt`, `race_no`
+- 주요 응답 필드:
+  - `stnd_yr`: 경기연도
+  - `race_ymd`: 경주일자
+  - `meet_nm`: 경륜장명
+  - `race_no`: 경주번호
+  - `rank1`, `rank2`, `rank3`: 1~3위
+  - `week_tcnt`: 등록회차수
+  - `day_tcnt`: 경기회차수
+  - `row_num`: 순번
+- 문서상 결과는 1~3위 중심이며 전체 출전 선수별 순위/실격/기권 세부 필드는 확인되지 않았다.
+- 문서상 별도 공식 race ID와 player/racer ID는 확인되지 않았다.
+- 2026-07-14 live 응답에서 `rank1`, `rank2`, `rank3` 값은 `2***`, `6***`, `5***`처럼 출전번호와 선수명이 결합된 형식이었다.
+- `race_ymd`는 `0103`처럼 `MMDD` 형태로 왔고 `stnd_yr=2025`와 결합해 `2025-01-03`으로 정규화한다.
+- 원본 result item 1건에서 선수 결과 3건이 정규화된다.
+- 4위 이후 필드는 확인되지 않았으므로 결과 API는 `PARTIAL_TOP3_RESULT_SOURCE`로 취급한다.
+
+### 2026-07-14 preview 실행 상태
+
+- 현재 셸에 `DATA_GO_KR_SERVICE_KEY`가 없어 live 호출은 실행하지 않았다.
+- `scripts/collect_race_history.py --date-from 2025-01-01 --date-to 2025-01-31 --max-races 10 --dry-run --inspect`
+  - `live_called=false`
+  - `lineup_item_count=0`
+  - `result_item_count=0`
+  - issue: `SERVICE_KEY_MISSING`
+- 서비스 키가 준비되면 결과 API 특성상 단순 날짜 범위만으로는 결과를 조회할 수 없고, 최소 `--meet-name`, `--year`, `--week-count`, `--day-count`, `--race-number`를 지정해야 한다.
+
+### 식별자 판정
+
+| 대상 | 공식 식별자 | 존재 여부 | 안정성 | 사용 가능 여부 |
+| --- | --- | --- | --- | --- |
+| race | 문서상 별도 ID 없음. `race_ymd + meet_nm + week_tcnt/day_tcnt + race_no` 자연키 후보만 있음 | `NO_STABLE_IDENTIFIER` | 자연키 후보라 cross-source 검증 필요 | 운영 PK로 직접 사용 금지 |
+| player | 출주표/결과 문서상 별도 `racerNo` 없음 | `NO_STABLE_IDENTIFIER` | 이름/기수/등번호는 불충분 | 운영 선수 ID 생성 금지 |
+| entry | `back_no`/결과 rank 값의 번호 | `CROSS_SOURCE_MAPPING_REQUIRED` | 경주 내 출전 번호일 가능성이 높음 | 선수 고유번호로 사용 금지 |
+
+## 13) 비배팅 경주 기록 분석 MVP staging
+
+- 경주 기록은 운영 `races`, `entries`, `results`, `players`에 직접 넣지 않고 다음 staging 테이블에 저장한다.
+  - `external_races`
+  - `external_race_entries`
+  - `external_race_results`
+- 경주 자연키는 `(source, standard_year, meet_name, week_count, day_count, race_number)`이다.
+- 자연키는 공식 ID가 아니며 source 내부 연결용 후보로만 사용한다.
+- 출주표 `back_no`는 경주 내 출전 번호로 보존하고 선수 고유번호로 사용하지 않는다.
+- 선수 분석은 `player_name + period_number` provisional key를 사용하되 공식 선수 ID라고 표현하지 않는다.
+- 제공 API는 기록 분석과 데이터 품질 조회만 수행하며 배당·베팅·예측값을 반환하지 않는다.

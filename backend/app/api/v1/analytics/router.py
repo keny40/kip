@@ -2,11 +2,14 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
+from app.ml.predictor import RacePredictionService
 from app.schemas.analytics import RaceSummaryRead, TrackPlayerStatRead, TrackSummaryRead
+from app.schemas.predictions import RacePredictionRead
 from app.services.analytics import AnalyticsService
 
 router = APIRouter(prefix="/analytics", tags=["analytics"])
 service = AnalyticsService()
+prediction_service = RacePredictionService()
 
 
 @router.get("/tracks/{track_id}/summary", response_model=TrackSummaryRead)
@@ -28,3 +31,11 @@ def get_track_players(track_id: int, db: Session = Depends(get_db)):
 @router.get("/races/summary", response_model=RaceSummaryRead)
 def get_races_summary(db: Session = Depends(get_db)):
     return service.races_summary(db)
+
+
+@router.get("/races/{race_id}/prediction", response_model=RacePredictionRead)
+def get_race_prediction(race_id: int, db: Session = Depends(get_db)):
+    try:
+        return prediction_service.predict_race(db, race_id)
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc

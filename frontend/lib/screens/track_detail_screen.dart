@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/track.dart';
 import '../services/api_client.dart';
+import '../utils/display_labels.dart';
 import '../utils/error_messages.dart';
 
 class TrackDetailScreen extends StatefulWidget {
@@ -34,12 +35,12 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Track Detail'),
+        title: const Text('경기장 상세'),
         actions: [
           IconButton(
             onPressed: _reload,
             icon: const Icon(Icons.refresh_outlined),
-            tooltip: 'Refresh',
+            tooltip: '새로고침',
           ),
         ],
       ),
@@ -54,55 +55,56 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
           }
           final bundle = snapshot.data;
           if (bundle == null) {
-            return const _EmptyState(message: 'Track details are unavailable.');
+            return const _EmptyState(message: '경기장 상세 정보를 찾을 수 없습니다.');
           }
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
               _TrackHeader(track: bundle.track),
               const SizedBox(height: 16),
-              Text('Summary', style: Theme.of(context).textTheme.titleMedium),
+              Text('요약', style: Theme.of(context).textTheme.titleMedium),
               const SizedBox(height: 8),
               Wrap(
                 spacing: 12,
                 runSpacing: 12,
                 children: [
                   _MetricCard(
-                      label: 'Total races',
+                      label: '전체 경주',
                       value: '${bundle.summary.totalRaces}'),
                   _MetricCard(
-                      label: 'Completed',
+                      label: '완료 경주',
                       value: '${bundle.summary.completedRaces}'),
                   _MetricCard(
-                      label: 'Entries',
+                      label: '출전 인원',
                       value: '${bundle.summary.totalEntries}'),
                   _MetricCard(
-                      label: 'Unique players',
+                      label: '참여 선수',
                       value: '${bundle.summary.uniquePlayers}'),
                 ],
               ),
               const SizedBox(height: 16),
-              Text('Recent races',
+              Text('최근 경주',
                   style: Theme.of(context).textTheme.titleMedium),
               const SizedBox(height: 8),
               if (bundle.summary.recent30Races.isEmpty)
-                const _EmptyState(message: 'No races found for this track.')
+                const _EmptyState(message: '이 경기장의 최근 경주가 없습니다.')
               else
                 ...bundle.summary.recent30Races.map(
                   (race) => Card(
                     elevation: 0,
                     child: ListTile(
-                      title: Text('${race.raceDate} · Race ${race.raceNumber}'),
-                      subtitle: Text('${race.trackName} · ${race.status}'),
+                      title: Text('${race.raceDate} · ${race.raceNumber}경주'),
+                      subtitle:
+                          Text('${race.trackName} · ${statusLabel(race.status)}'),
                     ),
                   ),
                 ),
               const SizedBox(height: 16),
-              Text('Player performance',
+              Text('선수 성적',
                   style: Theme.of(context).textTheme.titleMedium),
               const SizedBox(height: 8),
               if (bundle.players.isEmpty)
-                const _EmptyState(message: 'No player analytics available.')
+                const _EmptyState(message: '표시할 선수 성적이 없습니다.')
               else
                 ...bundle.players.map(
                   (player) => Card(
@@ -110,7 +112,7 @@ class _TrackDetailScreenState extends State<TrackDetailScreen> {
                     child: ListTile(
                       title: Text('${player.playerNumber} · ${player.name}'),
                       subtitle: Text(
-                        'Grade ${player.grade} · Starts ${player.starts} · Wins ${player.wins} · Top3 ${player.top3}',
+                        '등급 ${player.grade} · 출전 ${player.starts} · 우승 ${player.wins} · 3위 이내 ${player.top3}',
                       ),
                       trailing:
                           Text('${(player.winRate * 100).toStringAsFixed(1)}%'),
@@ -153,10 +155,10 @@ class _TrackHeader extends StatelessWidget {
           children: [
             Text(track.name, style: Theme.of(context).textTheme.headlineSmall),
             const SizedBox(height: 8),
-            Text('Code: ${track.code}'),
-            Text('Region: ${track.region}'),
-            if (track.address != null) Text('Address: ${track.address}'),
-            Text('Status: ${track.status}'),
+            Text('코드: ${track.code}'),
+            Text('지역: ${track.region}'),
+            if (track.address != null) Text('주소: ${track.address}'),
+            Text('상태: ${statusLabel(track.status)}'),
           ],
         ),
       ),
@@ -206,12 +208,12 @@ class _ErrorState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('Failed to load track detail',
+            Text('경기장 상세를 불러오지 못했습니다',
                 style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 8),
             Text(message, textAlign: TextAlign.center),
             const SizedBox(height: 16),
-            FilledButton(onPressed: onRetry, child: const Text('Retry')),
+            FilledButton(onPressed: onRetry, child: const Text('다시 시도')),
           ],
         ),
       ),

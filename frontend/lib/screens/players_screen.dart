@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/player.dart';
 import '../services/api_client.dart';
+import '../utils/display_labels.dart';
 import '../utils/error_messages.dart';
 import '../widgets/player_list_filter.dart';
 import 'player_detail_screen.dart';
@@ -250,7 +251,8 @@ class _PlayersScreenState extends State<PlayersScreen> {
                                     '${player.playerNumber} · ${player.name}'),
                                 subtitle: Text(
                                     '등급 ${player.grade} · 지역 ${player.region}'),
-                                trailing: Text(player.status),
+                                trailing:
+                                    Chip(label: Text(statusLabel(player.status))),
                                 onTap: () {
                                   Navigator.of(context).push(
                                     MaterialPageRoute(

@@ -151,12 +151,12 @@ class _AdminDataQualityScreenState extends State<AdminDataQualityScreen> {
                   data.statisticsQuality.missingPeriod
             ),
             (
-              '등급 unknown',
+              '등급 미확인',
               data.externalPlayersQuality.unknownGrade +
                   data.statisticsQuality.unknownGrade
             ),
-            ('지역 unknown', data.externalPlayersQuality.unknownRegion),
-            ('상태 unknown', data.externalPlayersQuality.unknownStatus),
+            ('지역 미확인', data.externalPlayersQuality.unknownRegion),
+            ('상태 미확인', data.externalPlayersQuality.unknownStatus),
             (
               '통계값 NULL',
               data.statisticsQuality.invalidRunCount +

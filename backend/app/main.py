@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import app.models  # noqa: F401
 from app.api.v1.admin.router import router as admin_router
 from app.api.v1.analytics.router import router as analytics_router
+from app.api.v1.analytics.history_router import router as history_analytics_router
 from app.api.v1.auth.router import router as auth_router
 from app.api.v1.dashboard.router import router as dashboard_router
 from app.api.v1.entries.router import router as entries_router
@@ -38,6 +39,7 @@ app.include_router(results_router, prefix=settings.api_v1_prefix)
 app.include_router(tracks_router, prefix=settings.api_v1_prefix)
 app.include_router(predictions_router, prefix=settings.api_v1_prefix)
 app.include_router(analytics_router, prefix=settings.api_v1_prefix)
+app.include_router(history_analytics_router, prefix=settings.api_v1_prefix)
 app.include_router(dashboard_router, prefix=settings.api_v1_prefix)
 app.include_router(admin_router, prefix=settings.api_v1_prefix)
 

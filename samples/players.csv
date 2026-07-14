@@ -1,11 +1,11 @@
 player_number,name,grade,region,status
-1001,Kim Min-joon,A1,Seoul,active
-1002,Lee Hyun-soo,A2,Busan,active
-1003,Park Ji-ho,B1,Seoul,active
-1004,Choi Woo-jin,B1,Incheon,active
-1005,Jung Tae-yang,A1,Daegu,active
-1006,Han Seung-min,A2,Gwangju,active
-1007,Yoon Jae-hyun,B1,Daejeon,active
-1008,Lim Dong-hyun,B2,Seoul,active
-1009,Shin Min-jae,A1,Busan,active
-1010,Seo Jun-ki,B1,Ulsan,active
+1001,김민준,A1,서울,active
+1002,이현수,A2,부산,active
+1003,박지호,B1,서울,active
+1004,최우진,B1,인천,active
+1005,정태양,A1,대구,active
+1006,한승민,A2,광주,active
+1007,윤재현,B1,대전,active
+1008,임동현,B2,서울,active
+1009,신민재,A1,부산,active
+1010,서준기,B1,울산,active

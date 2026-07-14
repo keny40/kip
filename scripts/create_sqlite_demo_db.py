@@ -85,10 +85,12 @@ def import_samples(url: str) -> None:
 
 def seed_staging(url: str) -> None:
     now = datetime.now(timezone.utc)
+    names = ["김민준", "이현수", "박지호", "최우진", "정태양", "한승민", "윤재현", "임동현", "신민재", "서준기"]
+    regions = ["서울", "부산", "서울", "인천", "대구", "광주", "대전", "서울", "부산", "울산"]
     with session_scope(url) as db:
         for index in range(1, 11):
             external_id = f"{index:08d}"
-            name = f"Demo Racer {index:02d}"
+            name = names[index - 1]
             period = f"{index:02d}"
             grade = ("A1", "A2", "B1")[index % 3]
             db.add(
@@ -98,7 +100,7 @@ def seed_staging(url: str) -> None:
                     name=name,
                     period_number=period,
                     grade=grade,
-                    region="unknown",
+                    region=regions[index - 1],
                     status="active",
                     detail_url=None,
                     source_updated_at=None,

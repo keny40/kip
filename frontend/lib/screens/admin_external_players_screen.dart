@@ -5,6 +5,7 @@ import '../routes/app_router.dart';
 import '../services/api_client.dart';
 import '../services/auth_service.dart';
 import '../services/external_link_opener.dart';
+import '../utils/display_labels.dart';
 import '../widgets/admin_readonly_widgets.dart';
 
 typedef ExternalPlayersLoader = Future<ExternalPlayerPage> Function(
@@ -144,9 +145,9 @@ class _AdminExternalPlayersScreenState
                   _detail('External ID', item.externalId),
                   _detail('이름', item.name),
                   _detail('기수', adminValue(item.periodNumber)),
-                  _detail('등급', item.grade),
-                  _detail('지역', item.region),
-                  _detail('상태', item.status),
+                  _detail('등급', optionalLabel(item.grade)),
+                  _detail('지역', optionalLabel(item.region)),
+                  _detail('상태', statusLabel(item.status)),
                   _detail('원본 갱신', adminDate(item.sourceUpdatedAt)),
                   _detail('수집', adminDate(item.collectedAt)),
                   _detail('생성', adminDate(item.createdAt)),
@@ -208,7 +209,7 @@ class _AdminExternalPlayersScreenState
             },
             onReset: _reset,
             children: [
-              _field('Source', _source),
+              _field('출처', _source),
               _field('이름', _name),
               _field('기수', _period),
               _field('등급', _grade),
@@ -230,7 +231,7 @@ class _AdminExternalPlayersScreenState
               scrollDirection: Axis.horizontal,
               child: DataTable(
                 columns: const [
-                  DataColumn(label: Text('Source')),
+                  DataColumn(label: Text('출처')),
                   DataColumn(label: Text('External ID')),
                   DataColumn(label: Text('이름')),
                   DataColumn(label: Text('기수')),
@@ -247,9 +248,9 @@ class _AdminExternalPlayersScreenState
                             DataCell(Text(item.externalId)),
                             DataCell(Text(item.name)),
                             DataCell(Text(adminValue(item.periodNumber))),
-                            DataCell(Text(item.grade)),
-                            DataCell(Text(item.region)),
-                            DataCell(Text(item.status)),
+                            DataCell(Text(optionalLabel(item.grade))),
+                            DataCell(Text(optionalLabel(item.region))),
+                            DataCell(Chip(label: Text(statusLabel(item.status)))),
                             DataCell(Text(adminDate(item.collectedAt))),
                           ],
                         ))

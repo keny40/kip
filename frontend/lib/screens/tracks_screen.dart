@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/track.dart';
 import '../services/api_client.dart';
+import '../utils/display_labels.dart';
 import '../utils/error_messages.dart';
 import 'track_detail_screen.dart';
 
@@ -67,7 +68,7 @@ class _TracksScreenState extends State<TracksScreen> {
                   title: Text('${track.name} (${track.code})'),
                   subtitle: Text(
                       '${track.region}${track.address == null ? '' : ' · ${track.address}'}'),
-                  trailing: Chip(label: Text(track.status)),
+                  trailing: Chip(label: Text(statusLabel(track.status))),
                   onTap: () {
                     Navigator.of(context).push(
                       MaterialPageRoute(

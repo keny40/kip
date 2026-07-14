@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/player.dart';
+import '../utils/display_labels.dart';
 
 class PlayerListFilterSelection {
   const PlayerListFilterSelection({
@@ -39,7 +40,7 @@ class PlayerListFilterSelection {
       chips.add('지역 $region');
     }
     if (status != null) {
-      chips.add('상태 $status');
+      chips.add('상태 ${statusLabel(status)}');
     }
     return chips;
   }
@@ -167,7 +168,8 @@ class _PlayerListFilterBottomSheetState extends State<PlayerListFilterBottomShee
                   decoration: const InputDecoration(labelText: '상태'),
                   items: [
                     const DropdownMenuItem<String?>(value: null, child: Text('전체')),
-                    ..._statuses.map((value) => DropdownMenuItem<String?>(value: value, child: Text(value))),
+                    ..._statuses.map((value) => DropdownMenuItem<String?>(
+                        value: value, child: Text(statusLabel(value)))),
                   ],
                   onChanged: (value) {
                     setState(() {

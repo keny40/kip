@@ -1,12 +1,19 @@
-param([switch]$SkipFlutterBuild)
+param(
+    [switch]$SkipFlutterBuild,
+    [string]$PackageName = "kip-sqlite-demo",
+    [string]$VersionSuffix = ""
+)
 
 $ErrorActionPreference = "Stop"
 $Root = Split-Path -Parent $PSScriptRoot
 $DistRoot = [IO.Path]::GetFullPath((Join-Path $Root "dist"))
-$Target = [IO.Path]::GetFullPath((Join-Path $DistRoot "kip-sqlite-demo"))
+$Target = [IO.Path]::GetFullPath((Join-Path $DistRoot $PackageName))
 $Workspace = [IO.Path]::GetFullPath($Root)
 if (-not $Target.StartsWith($Workspace + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) {
     throw "Unsafe distribution target."
+}
+if ($PackageName -notmatch '^[A-Za-z0-9._-]+$') {
+    throw "PackageName must contain only letters, numbers, dots, underscores, and hyphens."
 }
 if (Test-Path -LiteralPath $Target) {
     Remove-Item -LiteralPath $Target -Recurse -Force
@@ -51,7 +58,8 @@ foreach ($Symbol in $WasmSymbols) {
 }
 
 $Commit = (git -C $Root rev-parse --short=12 HEAD).Trim()
-Set-Content -LiteralPath (Join-Path $Target "VERSION") -Value "0.1.0-sqlite-demo+$Commit" -Encoding ascii
+$VersionBuild = if ($VersionSuffix) { $VersionSuffix } else { $Commit }
+Set-Content -LiteralPath (Join-Path $Target "VERSION") -Value "0.1.0-sqlite-demo+$VersionBuild" -Encoding ascii
 
 & python (Join-Path $Target "scripts\create_sqlite_demo_db.py")
 if ($LASTEXITCODE -ne 0) { throw "Demo database creation failed." }
@@ -69,7 +77,7 @@ Get-ChildItem -LiteralPath $Target -Recurse -File -Filter "*.pyc" | Remove-Item 
 & python (Join-Path $Target "scripts\verify_demo_package.py")
 if ($LASTEXITCODE -ne 0) { throw "Built package verification failed." }
 $Size = (Get-ChildItem -LiteralPath $Target -Recurse -File | Measure-Object -Property Length -Sum).Sum
-$Archive = [IO.Path]::GetFullPath((Join-Path $DistRoot "kip-sqlite-demo.zip"))
+$Archive = [IO.Path]::GetFullPath((Join-Path $DistRoot "$PackageName.zip"))
 if (-not $Archive.StartsWith($DistRoot + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) {
     throw "Unsafe demo archive target."
 }

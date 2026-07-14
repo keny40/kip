@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/race.dart';
 import '../services/api_client.dart';
+import '../utils/display_labels.dart';
 import '../utils/error_messages.dart';
 import 'race_detail_screen.dart';
 
@@ -86,7 +87,7 @@ class _RaceCard extends StatelessWidget {
               const SizedBox(height: 4),
               Text('${race.raceDate} · ${race.scheduledStartTime}'),
               const SizedBox(height: 8),
-              Chip(label: Text(race.status)),
+              Chip(label: Text(statusLabel(race.status))),
             ],
           ),
         ),

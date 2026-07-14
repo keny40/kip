@@ -1,0 +1,25 @@
+<response>
+  <header>
+    <resultCode>00</resultCode>
+    <resultMsg>NORMAL SERVICE</resultMsg>
+  </header>
+  <body>
+    <pageNo>1</pageNo>
+    <totalCount>1</totalCount>
+    <numOfRows>1</numOfRows>
+    <items>
+      <item>
+        <stnd_yr>2025</stnd_yr>
+        <race_ymd>0103</race_ymd>
+        <meet_nm>광명</meet_nm>
+        <race_no>02</race_no>
+        <rank1>2가상선수B</rank1>
+        <rank2>6가상선수F</rank2>
+        <rank3>5가상선수E</rank3>
+        <week_tcnt>1</week_tcnt>
+        <day_tcnt>1</day_tcnt>
+        <row_num>1</row_num>
+      </item>
+    </items>
+  </body>
+</response>

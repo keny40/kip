@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/race.dart';
 import '../services/api_client.dart';
+import '../utils/display_labels.dart';
 import '../utils/error_messages.dart';
 
 class RaceDetailScreen extends StatefulWidget {
@@ -49,7 +50,7 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
                       const SizedBox(height: 8),
                       Text('경기일: ${race.raceDate}'),
                       Text('시작 예정: ${race.scheduledStartTime}'),
-                      Text('상태: ${race.status}'),
+                      Text('상태: ${statusLabel(race.status)}'),
                     ],
                   ),
                 ),
@@ -78,7 +79,7 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
                       title: Text(
                           '${result.player.playerNumber}번 · ${result.player.name}'),
                       subtitle: Text(
-                          '순위 ${result.finishPosition} · 상태 ${result.resultStatus}'),
+                          '순위 ${result.finishPosition} · 상태 ${statusLabel(result.resultStatus)}'),
                       trailing: Text(result.points?.toString() ?? '-'),
                     ),
                   ),
